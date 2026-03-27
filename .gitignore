@@ -1,0 +1,4 @@
+node_modules/
+.env
+public/uploads/imoveis/*
+!public/uploads/imoveis/.gitkeep
