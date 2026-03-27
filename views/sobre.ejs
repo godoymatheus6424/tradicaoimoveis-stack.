@@ -1,0 +1,82 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<section class="sobre-hero">
+  <div class="container">
+    <div class="section__eyebrow">Institucional</div>
+    <h1 style="font-family:var(--font-serif);font-size:var(--headline-lg);font-weight:300;max-width:18ch;line-height:1.15;">
+      Três décadas de tradição e confiança
+    </h1>
+  </div>
+</section>
+
+<section style="padding:var(--space-4xl) 0;">
+  <div class="container">
+    <div class="sobre-layout fade-in">
+      <div>
+        <div class="section__eyebrow">Nossa História</div>
+        <h2 style="font-family:var(--font-serif);font-size:var(--headline-md);font-weight:300;margin-bottom:var(--space-xl);">
+          Desde 1994 transformando sonhos em realidade
+        </h2>
+        <p style="color:var(--on-surface-variant);line-height:1.8;margin-bottom:var(--space-lg);">
+          A Tradição Imóveis nasceu em Maringá com uma missão clara: oferecer o mais alto padrão de serviço no mercado imobiliário paranaense. Ao longo de mais de três décadas, construímos uma reputação sólida baseada em honestidade, competência e compromisso com nossos clientes.
+        </p>
+        <p style="color:var(--on-surface-variant);line-height:1.8;margin-bottom:var(--space-xl);">
+          Nossa equipe de especialistas está preparada para orientá-lo em cada etapa do processo — da busca ao fechamento do negócio. Valorizamos cada cliente como único e trabalhamos para superar expectativas.
+        </p>
+        <div class="badge badge--primary">CRECI 7806-J</div>
+      </div>
+      <div style="background:var(--surface-container);border-radius:var(--radius-sm);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;">
+        <img src="/images/sobre-foto.jpg" alt="Tradição Imóveis" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);" onerror="this.style.display='none'">
+        <span style="font-size:5rem;display:none;" id="fallbackIcon">🏛</span>
+      </div>
+    </div>
+
+    <div class="sobre-stats fade-in">
+      <div class="sobre-stat">
+        <div class="sobre-stat__value">30+</div>
+        <div class="sobre-stat__label">Anos de Experiência</div>
+      </div>
+      <div class="sobre-stat">
+        <div class="sobre-stat__value">2k+</div>
+        <div class="sobre-stat__label">Imóveis Negociados</div>
+      </div>
+      <div class="sobre-stat">
+        <div class="sobre-stat__value">98%</div>
+        <div class="sobre-stat__label">Clientes Satisfeitos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--surface-container-low);padding:var(--space-4xl) 0;">
+  <div class="container">
+    <div class="section__header fade-in" style="text-align:center;max-width:600px;margin:0 auto var(--space-3xl);">
+      <div class="section__eyebrow">Nossos Valores</div>
+      <h2 class="section__title">O que nos guia</h2>
+    </div>
+    <div class="grid-3 fade-in">
+      <div style="background:var(--surface-container-lowest);padding:var(--space-2xl);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🤝</div>
+        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:0.75rem;">Confiança</h3>
+        <p style="color:var(--on-surface-variant);font-size:0.9rem;line-height:1.7;">Transparência e honestidade em cada negociação. Seu patrimônio nas mãos certas.</p>
+      </div>
+      <div style="background:var(--surface-container-lowest);padding:var(--space-2xl);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">⭐</div>
+        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:0.75rem;">Excelência</h3>
+        <p style="color:var(--on-surface-variant);font-size:0.9rem;line-height:1.7;">Padrão premium de atendimento, curadoria rigorosa e expertise de mercado.</p>
+      </div>
+      <div style="background:var(--surface-container-lowest);padding:var(--space-2xl);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">❤️</div>
+        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:0.75rem;">Compromisso</h3>
+        <p style="color:var(--on-surface-variant);font-size:0.9rem;line-height:1.7;">Dedicação total ao seu sonho. Presente em cada etapa da sua jornada.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

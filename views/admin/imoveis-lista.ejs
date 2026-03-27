@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'imoveis' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title">Imóveis</div>
+      <div class="admin-topbar__user">
+        <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div style="font-size:var(--label-md);color:var(--on-surface-variant);"><%= imoveis.length %> imóveis cadastrados</div>
+        <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Título</th>
+              <th>Tipo / Finalidade</th>
+              <th>Cidade</th>
+              <th>Preço</th>
+              <th>Status</th>
+              <th>Destaque</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% imoveis.forEach(function(im) { %>
+            <tr id="row-<%= im.id %>">
+              <td>
+                <% if (im.foto_principal) { %>
+                  <img class="admin-table__thumb" src="<%= im.foto_principal %>" alt="">
+                <% } else { %>
+                  <div style="width:48px;height:36px;background:var(--surface-container-high);border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;">🏠</div>
+                <% } %>
+              </td>
+              <td><strong><%= im.titulo %></strong><br><span style="font-size:var(--label-sm);color:var(--on-surface-variant);">#<%= String(im.id).padStart(4,'0') %></span></td>
+              <td style="text-transform:capitalize;"><%= im.tipo %> · <%= im.finalidade %></td>
+              <td><%= im.cidade %></td>
+              <td><%= im.preco_formatado %></td>
+              <td>
+                <button onclick="toggleAtivo(<%= im.id %>, this)" class="status <%= im.ativo ? 'status--active' : 'status--inactive' %>" style="cursor:pointer;border:none;background:none;" data-ativo="<%= im.ativo %>">
+                  <%= im.ativo ? 'Ativo' : 'Inativo' %>
+                </button>
+              </td>
+              <td>
+                <button onclick="toggleDestaque(<%= im.id %>, this)" class="status <%= im.destaque ? 'status--destaque' : '' %>" style="cursor:pointer;border:none;background:<%= im.destaque ? '' : 'var(--surface-container-high)' %>;" data-destaque="<%= im.destaque %>">
+                  <%= im.destaque ? '★ Destaque' : '☆ Normal' %>
+                </button>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <a href="/admin/imoveis/<%= im.id %>/editar" class="action-btn action-btn--edit">Editar</a>
+                  <button onclick="excluirImovel(<%= im.id %>)" class="action-btn action-btn--delete">Excluir</button>
+                </div>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'imoveis' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title"><%= imovel ? 'Editar Imóvel' : 'Novo Imóvel' %></div>
+      <div class="admin-topbar__user">
+        <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <% if (errors && errors.length > 0) { %>
+      <div class="alert alert--error">
+        <% errors.forEach(function(e) { %><div>• <%= e %></div><% }) %>
+      </div>
+      <% } %>
+
+      <form
+        method="POST"
+        action="<%= imovel ? '/admin/imoveis/' + imovel.id + '?_method=PUT' : '/admin/imoveis' %>"
+        enctype="multipart/form-data"
+      >
+        <% if (imovel && imovel.id) { %>
+          <input type="hidden" name="_method" value="PUT">
+        <% } %>
+
+        <div class="admin-form">
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--surface-container-high);">Informações Básicas</h3>
+
+          <div class="admin-form__grid">
+            <div class="admin-form__full">
+              <label class="input-label">Título *</label>
+              <input type="text" name="titulo" class="input" required value="<%= imovel ? imovel.titulo : '' %>" placeholder="Ex: Casa com 4 suítes no Jardim Alvorada">
+            </div>
+            <div>
+              <label class="input-label">Tipo *</label>
+              <select name="tipo" class="input" required>
+                <option value="">Selecione</option>
+                <% ['casa','apartamento','terreno','comercial','rural','cobertura'].forEach(function(t) { %>
+                <option value="<%= t %>" <%= imovel && imovel.tipo === t ? 'selected' : '' %>><%= t.charAt(0).toUpperCase() + t.slice(1) %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="input-label">Finalidade *</label>
+              <select name="finalidade" class="input" required>
+                <option value="venda" <%= !imovel || imovel.finalidade === 'venda' ? 'selected' : '' %>>Venda</option>
+                <option value="aluguel" <%= imovel && imovel.finalidade === 'aluguel' ? 'selected' : '' %>>Aluguel</option>
+              </select>
+            </div>
+            <div>
+              <label class="input-label">Preço (R$) *</label>
+              <input type="number" name="preco" class="input" step="0.01" min="0" required value="<%= imovel ? imovel.preco : '' %>" placeholder="Ex: 850000">
+            </div>
+            <div>
+              <label class="input-label">Categoria</label>
+              <select name="categoria_id" class="input">
+                <option value="">Sem categoria</option>
+                <% categorias.forEach(function(cat) { %>
+                <option value="<%= cat.id %>" <%= imovel && imovel.categoria_id == cat.id ? 'selected' : '' %>><%= cat.nome %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="admin-form__full">
+              <label class="input-label">Descrição</label>
+              <textarea name="descricao" class="input" rows="5" placeholder="Descreva o imóvel..."><%= imovel ? imovel.descricao || '' : '' %></textarea>
+            </div>
+          </div>
+
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1.5rem;padding:1rem 0;border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">Características</h3>
+
+          <div class="admin-form__grid">
+            <div>
+              <label class="input-label">Área Total (m²)</label>
+              <input type="number" name="area_total" class="input" step="0.01" min="0" value="<%= imovel ? imovel.area_total || '' : '' %>">
+            </div>
+            <div>
+              <label class="input-label">Área Construída (m²)</label>
+              <input type="number" name="area_construida" class="input" step="0.01" min="0" value="<%= imovel ? imovel.area_construida || '' : '' %>">
+            </div>
+            <div>
+              <label class="input-label">Quartos</label>
+              <input type="number" name="quartos" class="input" min="0" value="<%= imovel ? imovel.quartos || 0 : 0 %>">
+            </div>
+            <div>
+              <label class="input-label">Suítes</label>
+              <input type="number" name="suites" class="input" min="0" value="<%= imovel ? imovel.suites || 0 : 0 %>">
+            </div>
+            <div>
+              <label class="input-label">Banheiros</label>
+              <input type="number" name="banheiros" class="input" min="0" value="<%= imovel ? imovel.banheiros || 0 : 0 %>">
+            </div>
+            <div>
+              <label class="input-label">Vagas de Garagem</label>
+              <input type="number" name="vagas_garagem" class="input" min="0" value="<%= imovel ? imovel.vagas_garagem || 0 : 0 %>">
+            </div>
+          </div>
+
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1.5rem;padding:1rem 0;border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">Localização</h3>
+
+          <div class="admin-form__grid">
+            <div class="admin-form__full">
+              <label class="input-label">Endereço</label>
+              <input type="text" name="endereco" class="input" value="<%= imovel ? imovel.endereco || '' : '' %>" placeholder="Rua, número">
+            </div>
+            <div>
+              <label class="input-label">Bairro</label>
+              <input type="text" name="bairro" class="input" value="<%= imovel ? imovel.bairro || '' : '' %>">
+            </div>
+            <div>
+              <label class="input-label">Cidade</label>
+              <input type="text" name="cidade" class="input" value="<%= imovel ? imovel.cidade || 'Maringá' : 'Maringá' %>">
+            </div>
+            <div>
+              <label class="input-label">Estado</label>
+              <input type="text" name="estado" class="input" maxlength="2" value="<%= imovel ? imovel.estado || 'PR' : 'PR' %>">
+            </div>
+            <div>
+              <label class="input-label">CEP</label>
+              <input type="text" name="cep" class="input" value="<%= imovel ? imovel.cep || '' : '' %>" placeholder="00000-000">
+            </div>
+          </div>
+
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1.5rem;padding:1rem 0;border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">Configurações</h3>
+
+          <div style="display:flex;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" name="destaque" <%= imovel && imovel.destaque ? 'checked' : '' %>>
+              <span class="input-label" style="margin-bottom:0;">Imóvel Destaque</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" name="novo" <%= imovel && imovel.novo ? 'checked' : '' %>>
+              <span class="input-label" style="margin-bottom:0;">Marcar como Novo</span>
+            </label>
+            <% if (imovel) { %>
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" name="ativo" <%= imovel.ativo ? 'checked' : '' %>>
+              <span class="input-label" style="margin-bottom:0;">Imóvel Ativo</span>
+            </label>
+            <% } %>
+          </div>
+
+          <!-- Fotos existentes -->
+          <% if (fotos && fotos.length > 0) { %>
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1rem;padding-top:1rem;border-top:1px solid var(--surface-container-high);">Fotos Atuais</h3>
+          <div class="upload-preview" id="fotosAtuais">
+            <% fotos.forEach(function(foto) { %>
+            <div class="upload-preview__item" id="foto-<%= foto.id %>">
+              <img src="<%= foto.path %>" alt="">
+              <% if (foto.principal) { %>
+              <div class="upload-preview__star">✓ Principal</div>
+              <% } else { %>
+              <button type="button" class="upload-preview__star" onclick="setPrincipal(<%= foto.id %>)">Principal</button>
+              <% } %>
+              <button type="button" class="upload-preview__del" onclick="deletarFoto(<%= foto.id %>)">✕</button>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+
+          <!-- Upload novas fotos -->
+          <div style="margin-top:1.5rem;border-top:1px solid var(--surface-container-high);padding-top:1.5rem;">
+            <label class="input-label" style="margin-bottom:1rem;">Adicionar Fotos</label>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotosInput').click()">
+              <div class="upload-area__icon">📷</div>
+              <div class="upload-area__text">
+                Clique ou arraste fotos aqui<br>
+                <small style="color:var(--outline);">JPG, PNG, WEBP · máx 10MB · até 20 fotos</small>
+              </div>
+              <input type="file" id="fotosInput" name="fotos" multiple accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="previewFotos(this)">
+            </div>
+            <div class="upload-preview" id="previewNovos"></div>
+          </div>
+
+          <div style="display:flex;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--surface-container-high);">
+            <button type="submit" class="btn btn--primary"><%= imovel ? 'Salvar Alterações' : 'Cadastrar Imóvel' %></button>
+            <a href="/admin/imoveis" class="btn btn--secondary">Cancelar</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+<script src="/js/admin.js"></script>
+</body>
+</html>

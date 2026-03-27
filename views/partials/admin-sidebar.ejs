@@ -1,0 +1,21 @@
+<aside class="admin-sidebar">
+  <div class="admin-sidebar__logo">
+    Tradição
+    <span>Admin Panel</span>
+  </div>
+  <nav class="admin-sidebar__nav">
+    <div class="admin-sidebar__label">Principal</div>
+    <a href="/admin/dashboard" class="admin-sidebar__link <%= typeof active !== 'undefined' && active === 'dashboard' ? 'admin-sidebar__link--active' : '' %>">
+      📊 Dashboard
+    </a>
+    <a href="/admin/imoveis" class="admin-sidebar__link <%= typeof active !== 'undefined' && active === 'imoveis' ? 'admin-sidebar__link--active' : '' %>">
+      🏠 Imóveis
+    </a>
+    <a href="/admin/contatos" class="admin-sidebar__link <%= typeof active !== 'undefined' && active === 'contatos' ? 'admin-sidebar__link--active' : '' %>">
+      📧 Contatos
+    </a>
+    <div class="admin-sidebar__label" style="margin-top:1rem;">Site</div>
+    <a href="/" target="_blank" class="admin-sidebar__link">🌐 Ver Site</a>
+    <a href="/auth/admin/logout" class="admin-sidebar__link" style="margin-top:2rem;color:rgba(186,26,26,0.7);">🚪 Sair</a>
+  </nav>
+</aside>

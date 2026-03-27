@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'dashboard' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title">Dashboard</div>
+      <div class="admin-topbar__user">
+        Olá, <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-card__value"><%= metricas.total %></div>
+          <div class="metric-card__label">Total de Imóveis</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card__value"><%= metricas.ativos %></div>
+          <div class="metric-card__label">Imóveis Ativos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card__value"><%= metricas.contatos %></div>
+          <div class="metric-card__label">Contatos Não Lidos</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);">Imóveis Recentes</h3>
+        <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Título</th>
+              <th>Tipo</th>
+              <th>Preço</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recentes.forEach(function(im) { %>
+            <tr>
+              <td>
+                <% if (im.foto_principal) { %>
+                  <img class="admin-table__thumb" src="<%= im.foto_principal %>" alt="">
+                <% } else { %>
+                  <div style="width:48px;height:36px;background:var(--surface-container-high);border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:1.25rem;">🏠</div>
+                <% } %>
+              </td>
+              <td><strong><%= im.titulo %></strong></td>
+              <td style="text-transform:capitalize;"><%= im.tipo %></td>
+              <td><%= im.preco_formatado %></td>
+              <td>
+                <span class="status <%= im.ativo ? 'status--active' : 'status--inactive' %>">
+                  <%= im.ativo ? 'Ativo' : 'Inativo' %>
+                </span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <a href="/admin/imoveis/<%= im.id %>/editar" class="action-btn action-btn--edit">Editar</a>
+                </div>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

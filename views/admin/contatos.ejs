@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'contatos' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title">Contatos</div>
+      <div class="admin-topbar__user">
+        <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail / Tel.</th>
+              <th>Imóvel</th>
+              <th>Mensagem</th>
+              <th>Data</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% contatos.forEach(function(ct) { %>
+            <tr id="ct-<%= ct.id %>" style="<%= !ct.lido ? 'background:rgba(105,0,8,0.03)' : '' %>">
+              <td><strong><%= ct.nome %></strong></td>
+              <td>
+                <div><%= ct.email %></div>
+                <% if (ct.telefone) { %><div style="font-size:var(--label-sm);color:var(--on-surface-variant);"><%= ct.telefone %></div><% } %>
+              </td>
+              <td style="font-size:var(--label-sm);"><%= ct.imovel_titulo || '—' %></td>
+              <td style="max-width:250px;font-size:var(--label-md);"><%= ct.mensagem ? ct.mensagem.substring(0,100) + (ct.mensagem.length > 100 ? '...' : '') : '—' %></td>
+              <td style="font-size:var(--label-sm);white-space:nowrap;">
+                <%= new Date(ct.created_at).toLocaleDateString('pt-BR') %>
+              </td>
+              <td>
+                <% if (!ct.lido) { %>
+                <button onclick="marcarLido(<%= ct.id %>)" class="action-btn action-btn--edit">Marcar Lido</button>
+                <% } else { %>
+                <span class="status status--active">Lido</span>
+                <% } %>
+              </td>
+            </tr>
+            <% }) %>
+            <% if (contatos.length === 0) { %>
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--on-surface-variant);">Nenhum contato recebido.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+async function marcarLido(id) {
+  const res = await fetch(`/admin/contatos/${id}/lido`, { method: 'PUT' });
+  if (res.ok) {
+    const row = document.getElementById(`ct-${id}`);
+    row.style.background = '';
+    row.querySelector('button').outerHTML = '<span class="status status--active">Lido</span>';
+  }
+}
+</script>
+</body>
+</html>

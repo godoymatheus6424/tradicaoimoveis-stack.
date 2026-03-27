@@ -1,0 +1,143 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__bg-image">
+    <img src="/images/hero-bg.jpg" alt="Imóvel de luxo" onerror="this.style.display='none'">
+  </div>
+  <div class="hero__bg"></div>
+  <div class="container">
+    <div class="hero__content fade-in">
+      <div class="hero__eyebrow">Tradição Imóveis · Desde 1994</div>
+      <h1 class="hero__title">
+        Encontre onde sua<br>
+        <em>história</em> começa
+      </h1>
+      <div class="hero__bar"></div>
+      <p class="hero__subtitle">Curadoria exclusiva de imóveis em Maringá e região. Mais de três décadas conectando famílias a lares extraordinários.</p>
+      <div class="hero__actions">
+        <a href="/imoveis" class="btn btn--primary">Ver Imóveis</a>
+        <a href="/contato" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Fale Conosco</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero__scroll">
+    <div class="hero__scroll-icon">
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+</section>
+
+<!-- DESTAQUE -->
+<% if (destaque) { %>
+<section class="destaque-section">
+  <div class="container">
+    <div class="section__header fade-in">
+      <div class="section__eyebrow">Destaque do Mês</div>
+      <h2 class="section__title">Imóvel em Evidência</h2>
+    </div>
+    <div class="destaque-card fade-in">
+      <div class="destaque-card__image">
+        <% if (destaque.foto_principal) { %>
+          <img src="<%= destaque.foto_principal %>" alt="<%= destaque.titulo %>">
+        <% } else { %>
+          <div style="width:100%;height:100%;background:var(--surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--outline);">
+            <span style="font-size:4rem;">🏠</span>
+          </div>
+        <% } %>
+      </div>
+      <div class="destaque-card__panel">
+        <div class="badge badge--new" style="margin-bottom:1rem;">Nova Listagem</div>
+        <% if (destaque.categoria_nome) { %>
+          <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--on-surface-variant);margin-bottom:0.5rem;"><%= destaque.categoria_nome %></div>
+        <% } %>
+        <h2 style="font-family:var(--font-serif);font-size:1.75rem;font-weight:400;margin-bottom:0.75rem;line-height:1.3;"><%= destaque.titulo %></h2>
+        <p style="font-size:0.875rem;color:var(--on-surface-variant);margin-bottom:1rem;">
+          <% if (destaque.bairro) { %><%= destaque.bairro %>, <% } %><%= destaque.cidade %> — <%= destaque.estado %>
+        </p>
+        <div class="destaque-card__specs">
+          <% if (destaque.quartos > 0) { %>
+          <div class="destaque-card__spec">
+            <div class="destaque-card__spec-value"><%= destaque.quartos %></div>
+            <div class="destaque-card__spec-label">Quartos</div>
+          </div>
+          <% } %>
+          <% if (destaque.banheiros > 0) { %>
+          <div class="destaque-card__spec">
+            <div class="destaque-card__spec-value"><%= destaque.banheiros %></div>
+            <div class="destaque-card__spec-label">Banheiros</div>
+          </div>
+          <% } %>
+          <% if (destaque.area_total) { %>
+          <div class="destaque-card__spec">
+            <div class="destaque-card__spec-value"><%= Math.round(destaque.area_total) %></div>
+            <div class="destaque-card__spec-label">m² Total</div>
+          </div>
+          <% } %>
+          <% if (destaque.vagas_garagem > 0) { %>
+          <div class="destaque-card__spec">
+            <div class="destaque-card__spec-value"><%= destaque.vagas_garagem %></div>
+            <div class="destaque-card__spec-label">Vagas</div>
+          </div>
+          <% } %>
+        </div>
+        <div class="destaque-card__price"><%= destaque.preco_formatado %></div>
+        <a href="/imovel/<%= destaque.id %>" class="btn btn--primary">Saiba Mais</a>
+      </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- CURADORIA -->
+<% if (categorias && categorias.length > 0) { %>
+<section class="curadoria-section">
+  <div class="container">
+    <div class="section__header fade-in">
+      <div class="section__eyebrow">Nossas Especialidades</div>
+      <h2 class="section__title">Nossa Curadoria</h2>
+      <p class="section__subtitle">Selecionamos as melhores oportunidades em cada segmento para você.</p>
+    </div>
+    <div class="bento-grid fade-in">
+      <% categorias.forEach(function(cat) { %>
+      <a href="/imoveis?categoria_id=<%= cat.id %>" class="bento-item">
+        <% if (cat.imagem_url) { %>
+          <img src="<%= cat.imagem_url %>" alt="<%= cat.nome %>" onerror="this.parentElement.style.background='var(--surface-container-highest)'">
+        <% } else { %>
+          <div style="width:100%;height:100%;background:var(--surface-container-highest);"></div>
+        <% } %>
+        <div class="bento-item__overlay">
+          <div class="bento-item__badge"><%= cat.subtitulo || '' %></div>
+          <div class="bento-item__title"><%= cat.nome %></div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- CTA BAND -->
+<section style="background:linear-gradient(135deg,var(--primary),var(--primary-container));padding:var(--space-4xl) 0;">
+  <div class="container" style="text-align:center;">
+    <div class="badge" style="background:rgba(255,154,145,0.2);color:var(--on-primary-container);margin-bottom:1.5rem;">Atendimento Personalizado</div>
+    <h2 style="font-family:var(--font-serif);font-size:var(--headline-lg);color:var(--on-primary);font-weight:300;margin-bottom:1rem;">
+      Prontos para encontrar<br>o imóvel ideal para você
+    </h2>
+    <p style="color:rgba(255,255,255,0.75);font-size:1.125rem;max-width:50ch;margin:0 auto 2rem;">
+      Nossa equipe de especialistas está disponível para tornar sua busca mais eficiente e segura.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/contato" class="btn" style="background:var(--on-primary);color:var(--primary);border-radius:var(--radius-xs);">Fale Conosco</a>
+      <a href="https://wa.me/5544998870006" target="_blank" class="btn btn--secondary" style="color:var(--on-primary);border-color:rgba(255,255,255,0.3);">WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

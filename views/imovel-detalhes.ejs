@@ -1,0 +1,240 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<section class="detalhes-header">
+  <div class="container">
+    <div class="detalhes-breadcrumb">
+      <a href="/">Home</a> &rsaquo; <a href="/imoveis">Imóveis</a> &rsaquo; <%= imovel.titulo %>
+    </div>
+    <h1 style="font-family:var(--font-serif);font-size:var(--headline-md);font-weight:400;margin-bottom:0.5rem;"><%= imovel.titulo %></h1>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <% if (imovel.destaque) { %><span class="badge badge--primary">Destaque</span><% } %>
+      <% if (imovel.novo) { %><span class="badge badge--new">Novo</span><% } %>
+      <span style="font-size:var(--label-md);color:var(--on-surface-variant);">
+        <% if (imovel.bairro) { %><%= imovel.bairro %>, <% } %><%= imovel.cidade %> — <%= imovel.estado %>
+      </span>
+      <span class="badge" style="background:var(--secondary-container);color:var(--on-surface);text-transform:capitalize;"><%= imovel.finalidade %></span>
+    </div>
+  </div>
+</section>
+
+<section class="detalhes-content">
+  <div class="container">
+    <div class="detalhes-layout">
+      <!-- Main content -->
+      <div>
+        <!-- Galeria -->
+        <div class="galeria fade-in">
+          <% if (fotos && fotos.length > 0) { %>
+          <div class="galeria__principal" id="galeriaPrincipal" onclick="abrirLightbox(0)">
+            <img id="fotoAtiva" src="<%= fotos[0].path %>" alt="<%= imovel.titulo %>">
+          </div>
+          <% if (fotos.length > 1) { %>
+          <div class="galeria__thumbs">
+            <% fotos.forEach(function(foto, i) { %>
+            <div class="galeria__thumb <%= i === 0 ? 'galeria__thumb--active' : '' %>" onclick="trocarFoto('<%= foto.path %>', this, <%= i %>)">
+              <img src="<%= foto.path %>" alt="Foto <%= i + 1 %>">
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+          <% } else { %>
+          <div style="aspect-ratio:4/3;background:var(--surface-container-high);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:5rem;">🏠</span>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Specs -->
+        <div class="detalhes-specs fade-in" style="border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">
+          <% if (imovel.quartos > 0) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">🛏</div>
+            <div class="detalhes-spec__value"><%= imovel.quartos %></div>
+            <div class="detalhes-spec__label">Quartos</div>
+          </div>
+          <% } %>
+          <% if (imovel.suites > 0) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">✨</div>
+            <div class="detalhes-spec__value"><%= imovel.suites %></div>
+            <div class="detalhes-spec__label">Suítes</div>
+          </div>
+          <% } %>
+          <% if (imovel.banheiros > 0) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">🚿</div>
+            <div class="detalhes-spec__value"><%= imovel.banheiros %></div>
+            <div class="detalhes-spec__label">Banheiros</div>
+          </div>
+          <% } %>
+          <% if (imovel.vagas_garagem > 0) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">🚗</div>
+            <div class="detalhes-spec__value"><%= imovel.vagas_garagem %></div>
+            <div class="detalhes-spec__label">Vagas</div>
+          </div>
+          <% } %>
+          <% if (imovel.area_total) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">📐</div>
+            <div class="detalhes-spec__value"><%= Math.round(imovel.area_total) %></div>
+            <div class="detalhes-spec__label">m² Total</div>
+          </div>
+          <% } %>
+          <% if (imovel.area_construida) { %>
+          <div class="detalhes-spec">
+            <div class="detalhes-spec__icon">🏗</div>
+            <div class="detalhes-spec__value"><%= Math.round(imovel.area_construida) %></div>
+            <div class="detalhes-spec__label">m² Construído</div>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Preço -->
+        <div class="detalhes-price fade-in"><%= imovel.preco_formatado %></div>
+
+        <!-- Descrição -->
+        <% if (imovel.descricao) { %>
+        <div class="fade-in" style="margin-bottom:var(--space-2xl);">
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1rem;">Descrição</h3>
+          <p style="color:var(--on-surface-variant);line-height:1.8;white-space:pre-line;"><%= imovel.descricao %></p>
+        </div>
+        <% } %>
+
+        <!-- Localização -->
+        <% if (imovel.endereco || imovel.bairro) { %>
+        <div class="fade-in">
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1rem;">Localização</h3>
+          <p style="color:var(--on-surface-variant);">
+            <% if (imovel.endereco) { %><%= imovel.endereco %><br><% } %>
+            <% if (imovel.bairro) { %><%= imovel.bairro %> — <% } %>
+            <%= imovel.cidade %> / <%= imovel.estado %>
+            <% if (imovel.cep) { %> · CEP <%= imovel.cep %><% } %>
+          </p>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="detalhes-sidebar fade-in">
+        <div class="sidebar-card">
+          <div class="sidebar-card__title">Interesse neste imóvel?</div>
+          <a href="https://wa.me/5544998870006?text=Olá! Tenho interesse no imóvel: <%= encodeURIComponent(imovel.titulo) %>" target="_blank" class="btn btn--whatsapp btn--full" style="margin-bottom:0.75rem;">
+            WhatsApp
+          </a>
+          <a href="/contato?imovel=<%= imovel.id %>" class="btn btn--secondary btn--full">Agendar Visita</a>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card__title">Enviar Mensagem</div>
+          <form id="formContato">
+            <input type="hidden" name="imovel_id" value="<%= imovel.id %>">
+            <div class="input-group">
+              <input type="text" class="input" name="nome" placeholder="Seu nome" required>
+            </div>
+            <div class="input-group">
+              <input type="email" class="input" name="email" placeholder="Seu e-mail" required>
+            </div>
+            <div class="input-group">
+              <input type="tel" class="input" name="telefone" placeholder="Telefone">
+            </div>
+            <div class="input-group">
+              <textarea class="input" name="mensagem" placeholder="Mensagem..." rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Enviar Mensagem</button>
+            <div id="contatoMsg" style="margin-top:0.75rem;font-size:var(--label-md);text-align:center;"></div>
+          </form>
+        </div>
+
+        <div class="sidebar-card" style="background:var(--surface-container-low);">
+          <div style="font-size:var(--label-sm);text-transform:uppercase;letter-spacing:0.2em;color:var(--on-surface-variant);margin-bottom:0.5rem;">Código do Imóvel</div>
+          <div style="font-family:var(--font-serif);font-size:1.25rem;">#<%= String(imovel.id).padStart(4, '0') %></div>
+          <div style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:0.5rem;text-transform:capitalize;"><%= imovel.tipo %> · <%= imovel.finalidade %></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- Relacionados -->
+<% if (relacionados && relacionados.length > 0) { %>
+<section class="relacionados">
+  <div class="container">
+    <div class="section__header fade-in">
+      <div class="section__eyebrow">Veja Também</div>
+      <h2 class="section__title">Imóveis Relacionados</h2>
+    </div>
+    <div class="grid-3 fade-in">
+      <% relacionados.forEach(function(im) { %>
+      <div class="card">
+        <div class="card__image">
+          <% if (im.foto_principal) { %>
+            <img src="<%= im.foto_principal %>" alt="<%= im.titulo %>">
+          <% } else { %>
+            <div style="width:100%;height:100%;background:var(--surface-container-high);display:flex;align-items:center;justify-content:center;font-size:3rem;">🏠</div>
+          <% } %>
+        </div>
+        <div class="card__body">
+          <div class="card__title"><%= im.titulo %></div>
+          <div class="card__price"><%= im.preco_formatado %></div>
+          <a href="/imovel/<%= im.id %>" class="btn btn--ghost btn--sm">Saiba Mais</a>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox__close" onclick="fecharLightbox()">✕</button>
+  <button class="lightbox__nav lightbox__nav--prev" onclick="navLightbox(-1)">&#8249;</button>
+  <img class="lightbox__img" id="lightboxImg" src="" alt="">
+  <button class="lightbox__nav lightbox__nav--next" onclick="navLightbox(1)">&#8250;</button>
+</div>
+
+<%- include('partials/footer') %>
+
+<script>
+const fotos = <%- JSON.stringify(fotos.map(f => f.path)) %>;
+let fotoAtualIdx = 0;
+
+function trocarFoto(src, el, idx) {
+  document.getElementById('fotoAtiva').src = src;
+  fotoAtualIdx = idx;
+  document.querySelectorAll('.galeria__thumb').forEach(t => t.classList.remove('galeria__thumb--active'));
+  el.classList.add('galeria__thumb--active');
+}
+
+function abrirLightbox(idx) {
+  fotoAtualIdx = idx;
+  document.getElementById('lightboxImg').src = fotos[idx];
+  document.getElementById('lightbox').classList.add('lightbox--open');
+}
+
+function fecharLightbox() {
+  document.getElementById('lightbox').classList.remove('lightbox--open');
+}
+
+function navLightbox(dir) {
+  fotoAtualIdx = (fotoAtualIdx + dir + fotos.length) % fotos.length;
+  document.getElementById('lightboxImg').src = fotos[fotoAtualIdx];
+}
+
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) fecharLightbox();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('lightbox').classList.contains('lightbox--open')) return;
+  if (e.key === 'Escape') fecharLightbox();
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+});
+</script>
+<script src="/js/main.js"></script>
+<script src="/js/contato.js"></script>
+</body>
+</html>

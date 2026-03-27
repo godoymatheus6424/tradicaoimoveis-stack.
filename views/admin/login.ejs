@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-login">
+  <div class="admin-login__box">
+    <div class="admin-login__logo">Tradição</div>
+    <div class="admin-login__sub">Painel Administrativo</div>
+
+    <% if (error) { %>
+    <div class="alert alert--error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/auth/admin/login">
+      <div class="input-group">
+        <label class="input-label">E-mail</label>
+        <input type="email" name="email" class="input" placeholder="admin@tradicao.com" required autofocus>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Senha</label>
+        <input type="password" name="senha" class="input" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn--primary btn--full" style="margin-top:0.5rem;">Entrar</button>
+    </form>
+
+    <div style="margin-top:1.5rem;text-align:center;">
+      <a href="/" style="font-size:var(--label-md);color:var(--on-surface-variant);">← Voltar ao site</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

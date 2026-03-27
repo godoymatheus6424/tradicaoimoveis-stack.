@@ -1,0 +1,119 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<section style="background:var(--surface-container-low);padding:var(--space-3xl) 0;">
+  <div class="container">
+    <div class="section__eyebrow">Atendimento</div>
+    <h1 style="font-family:var(--font-serif);font-size:var(--headline-lg);font-weight:300;">Fale Conosco</h1>
+    <p style="color:var(--on-surface-variant);margin-top:0.5rem;">Estamos prontos para ajudá-lo a encontrar o imóvel perfeito.</p>
+  </div>
+</section>
+
+<div class="container">
+  <div class="contato-layout">
+    <!-- Info -->
+    <div class="fade-in">
+      <h2 style="font-family:var(--font-serif);font-size:var(--headline-md);font-weight:300;margin-bottom:var(--space-2xl);">
+        Como podemos<br>ajudá-lo?
+      </h2>
+
+      <div class="contato-info__item">
+        <div class="contato-info__icon">📞</div>
+        <div>
+          <div class="contato-info__label">Plantão</div>
+          <div class="contato-info__value">(44) 3246-7100</div>
+        </div>
+      </div>
+
+      <div class="contato-info__item">
+        <div class="contato-info__icon">💬</div>
+        <div>
+          <div class="contato-info__label">WhatsApp</div>
+          <div class="contato-info__value">
+            <a href="https://wa.me/5544998870006" target="_blank" style="color:var(--primary);">(44) 99887-0006</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="contato-info__item">
+        <div class="contato-info__icon">📧</div>
+        <div>
+          <div class="contato-info__label">E-mail</div>
+          <div class="contato-info__value">atendimento@tradicaoimoveismga.com.br</div>
+        </div>
+      </div>
+
+      <div class="contato-info__item">
+        <div class="contato-info__icon">📍</div>
+        <div>
+          <div class="contato-info__label">Endereço</div>
+          <div class="contato-info__value">Maringá — Paraná</div>
+        </div>
+      </div>
+
+      <div class="contato-info__item">
+        <div class="contato-info__icon">🏛</div>
+        <div>
+          <div class="contato-info__label">Registro</div>
+          <div class="contato-info__value">CRECI 7806-J</div>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--space-2xl);">
+        <a href="https://wa.me/5544998870006" target="_blank" class="btn btn--whatsapp">
+          Chamar no WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="fade-in">
+      <% if (success) { %>
+      <div class="alert alert--success">
+        Mensagem enviada com sucesso! Entraremos em contato em breve.
+      </div>
+      <% } %>
+
+      <div style="background:var(--surface-container-lowest);padding:var(--space-2xl);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);">
+        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:var(--space-xl);">Envie uma Mensagem</h3>
+
+        <form id="formContato">
+          <div class="input-group">
+            <label class="input-label">Nome *</label>
+            <input type="text" class="input" name="nome" id="nome" required placeholder="Seu nome completo">
+          </div>
+          <div class="input-group">
+            <label class="input-label">E-mail *</label>
+            <input type="email" class="input" name="email" id="email" required placeholder="seu@email.com">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Telefone</label>
+            <input type="tel" class="input" name="telefone" id="telefone" placeholder="(44) 00000-0000">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Imóvel de interesse (opcional)</label>
+            <select class="input" name="imovel_id" id="imovelId">
+              <option value="">Selecione um imóvel</option>
+              <% imoveis.forEach(function(im) { %>
+              <option value="<%= im.id %>"><%= im.titulo %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Mensagem</label>
+            <textarea class="input" name="mensagem" id="mensagem" rows="5" placeholder="Como podemos ajudá-lo?"></textarea>
+          </div>
+          <button type="submit" class="btn btn--primary btn--full">Enviar Mensagem</button>
+          <div id="contatoMsg" style="margin-top:1rem;text-align:center;font-size:var(--label-md);"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<script src="/js/main.js"></script>
+<script src="/js/contato.js"></script>
+</body>
+</html>
