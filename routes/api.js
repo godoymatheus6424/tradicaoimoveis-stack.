@@ -33,25 +33,20 @@ router.get('/imoveis', async (req, res) => {
     page = 1, limit = 12,
   } = req.query;
 
-  const params = [];
+  const filterParams = [];
   const conditions = ['i.ativo = true'];
 
-  if (tipo) { params.push(tipo); conditions.push(`i.tipo = $${params.length}`); }
-  if (finalidade) { params.push(finalidade); conditions.push(`i.finalidade = $${params.length}`); }
-  if (preco_min && !isNaN(preco_min)) { params.push(parseFloat(preco_min)); conditions.push(`i.preco >= $${params.length}`); }
-  if (preco_max && !isNaN(preco_max)) { params.push(parseFloat(preco_max)); conditions.push(`i.preco <= $${params.length}`); }
-  if (quartos && !isNaN(quartos)) { params.push(parseInt(quartos)); conditions.push(`i.quartos >= $${params.length}`); }
-  if (cidade) { params.push(`%${cidade}%`); conditions.push(`i.cidade ILIKE $${params.length}`); }
-  if (bairro) { params.push(`%${bairro}%`); conditions.push(`i.bairro ILIKE $${params.length}`); }
-  if (categoria_id && !isNaN(categoria_id)) { params.push(parseInt(categoria_id)); conditions.push(`i.categoria_id = $${params.length}`); }
+  if (tipo) { filterParams.push(tipo); conditions.push('i.tipo = ?'); }
+  if (finalidade) { filterParams.push(finalidade); conditions.push('i.finalidade = ?'); }
+  if (preco_min && !isNaN(preco_min)) { filterParams.push(parseFloat(preco_min)); conditions.push('i.preco >= ?'); }
+  if (preco_max && !isNaN(preco_max)) { filterParams.push(parseFloat(preco_max)); conditions.push('i.preco <= ?'); }
+  if (quartos && !isNaN(quartos)) { filterParams.push(parseInt(quartos)); conditions.push('i.quartos >= ?'); }
+  if (cidade) { filterParams.push(`%${cidade}%`); conditions.push('i.cidade ILIKE ?'); }
+  if (bairro) { filterParams.push(`%${bairro}%`); conditions.push('i.bairro ILIKE ?'); }
+  if (categoria_id && !isNaN(categoria_id)) { filterParams.push(parseInt(categoria_id)); conditions.push('i.categoria_id = ?'); }
 
   const where = conditions.join(' AND ');
   const offset = (parseInt(page) - 1) * parseInt(limit);
-
-  params.push(parseInt(limit));
-  const limitParam = params.length;
-  params.push(offset);
-  const offsetParam = params.length;
 
   try {
     const [dataRes, countRes] = await Promise.all([
@@ -62,12 +57,12 @@ router.get('/imoveis', async (req, res) => {
          LEFT JOIN categorias c ON c.id = i.categoria_id
          WHERE ${where}
          ORDER BY i.destaque DESC, i.created_at DESC
-         LIMIT $${limitParam} OFFSET $${offsetParam}`,
-        params
+         LIMIT ? OFFSET ?`,
+        [...filterParams, parseInt(limit), offset]
       ),
       db.raw(
         `SELECT COUNT(*) FROM imoveis i WHERE ${where}`,
-        params.slice(0, params.length - 2)
+        filterParams
       ),
     ]);
 
@@ -101,11 +96,11 @@ router.get('/imoveis/:id', async (req, res) => {
         `SELECT i.*, c.nome AS categoria_nome
          FROM imoveis i
          LEFT JOIN categorias c ON c.id = i.categoria_id
-         WHERE i.id = $1 AND i.ativo = true`,
+         WHERE i.id = ? AND i.ativo = true`,
         [id]
       ),
       db.raw(
-        'SELECT * FROM imovel_fotos WHERE imovel_id = $1 ORDER BY principal DESC, ordem ASC',
+        'SELECT * FROM imovel_fotos WHERE imovel_id = ? ORDER BY principal DESC, ordem ASC',
         [id]
       ),
     ]);
@@ -147,7 +142,7 @@ router.post('/contatos', async (req, res) => {
   try {
     await db.raw(
       `INSERT INTO contatos (imovel_id, nome, email, telefone, mensagem)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES (?, ?, ?, ?, ?)`,
       [imovel_id || null, nome.trim(), email.trim(), telefone || null, mensagem || null]
     );
     res.json({ success: true, message: 'Contato recebido com sucesso!' });

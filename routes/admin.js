@@ -109,7 +109,7 @@ router.post('/imoveis', isAuthenticated, upload.array('fotos', 20), async (req, 
       `INSERT INTO imoveis (titulo, descricao, tipo, finalidade, preco, area_total, area_construida,
         quartos, suites, banheiros, vagas_garagem, endereco, bairro, cidade, estado, cep,
         categoria_id, destaque, novo, ativo, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,true,NOW())
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,NOW())
        RETURNING id`,
       [
         titulo, descricao || null, tipo, finalidade, parseFloat(preco),
@@ -129,7 +129,7 @@ router.post('/imoveis', isAuthenticated, upload.array('fotos', 20), async (req, 
         const file = req.files[i];
         await db.raw(
           `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-           VALUES ($1,$2,$3,$4,$5)`,
+           VALUES (?,?,?,?,?)`,
           [imovelId, file.filename, `/uploads/imoveis/${file.filename}`, i === 0, i]
         );
       }
@@ -155,8 +155,8 @@ router.get('/imoveis/:id/editar', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
     const [imovelRes, fotosRes, categoriasRes] = await Promise.all([
-      db.raw('SELECT * FROM imoveis WHERE id = $1', [id]),
-      db.raw('SELECT * FROM imovel_fotos WHERE imovel_id = $1 ORDER BY ordem ASC', [id]),
+      db.raw('SELECT * FROM imoveis WHERE id = ?', [id]),
+      db.raw('SELECT * FROM imovel_fotos WHERE imovel_id = ? ORDER BY ordem ASC', [id]),
       db.raw('SELECT * FROM categorias WHERE ativo = true ORDER BY ordem'),
     ]);
     const imovel = imovelRes.rows[0];
@@ -194,7 +194,7 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
 
   if (errors.length) {
     const [fotosRes, categoriasRes] = await Promise.all([
-      db.raw('SELECT * FROM imovel_fotos WHERE imovel_id = $1 ORDER BY ordem', [id]),
+      db.raw('SELECT * FROM imovel_fotos WHERE imovel_id = ? ORDER BY ordem', [id]),
       db.raw('SELECT * FROM categorias WHERE ativo = true ORDER BY ordem'),
     ]);
     return res.render('admin/imovel-form', {
@@ -209,11 +209,11 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
 
   try {
     await db.raw(
-      `UPDATE imoveis SET titulo=$1, descricao=$2, tipo=$3, finalidade=$4, preco=$5,
-        area_total=$6, area_construida=$7, quartos=$8, suites=$9, banheiros=$10,
-        vagas_garagem=$11, endereco=$12, bairro=$13, cidade=$14, estado=$15, cep=$16,
-        categoria_id=$17, destaque=$18, novo=$19, ativo=$20, updated_at=NOW()
-       WHERE id=$21`,
+      `UPDATE imoveis SET titulo=?, descricao=?, tipo=?, finalidade=?, preco=?,
+        area_total=?, area_construida=?, quartos=?, suites=?, banheiros=?,
+        vagas_garagem=?, endereco=?, bairro=?, cidade=?, estado=?, cep=?,
+        categoria_id=?, destaque=?, novo=?, ativo=?, updated_at=NOW()
+       WHERE id=?`,
       [
         titulo, descricao || null, tipo, finalidade || 'venda', parseFloat(preco),
         area_total || null, area_construida || null,
@@ -229,14 +229,14 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
 
     if (req.files && req.files.length > 0) {
       const ordemRes = await db.raw(
-        'SELECT COALESCE(MAX(ordem), -1) AS max FROM imovel_fotos WHERE imovel_id = $1',
+        'SELECT COALESCE(MAX(ordem), -1) AS max FROM imovel_fotos WHERE imovel_id = ?',
         [id]
       );
       let ordem = ordemRes.rows[0].max + 1;
       for (const file of req.files) {
         await db.raw(
           `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-           VALUES ($1,$2,$3,$4,$5)`,
+           VALUES (?,?,?,?,?)`,
           [id, file.filename, `/uploads/imoveis/${file.filename}`, false, ordem++]
         );
       }
@@ -253,12 +253,12 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
 router.delete('/imoveis/:id', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const fotosRes = await db.raw('SELECT filename FROM imovel_fotos WHERE imovel_id = $1', [id]);
+    const fotosRes = await db.raw('SELECT filename FROM imovel_fotos WHERE imovel_id = ?', [id]);
     for (const foto of fotosRes.rows) {
       const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
-    await db.raw('DELETE FROM imoveis WHERE id = $1', [id]);
+    await db.raw('DELETE FROM imoveis WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -271,14 +271,14 @@ router.post('/imoveis/:id/fotos', isAuthenticated, upload.array('fotos', 20), as
   const { id } = req.params;
   try {
     const ordemRes = await db.raw(
-      'SELECT COALESCE(MAX(ordem), -1) AS max FROM imovel_fotos WHERE imovel_id = $1',
+      'SELECT COALESCE(MAX(ordem), -1) AS max FROM imovel_fotos WHERE imovel_id = ?',
       [id]
     );
     let ordem = ordemRes.rows[0].max + 1;
     for (const file of req.files) {
       await db.raw(
         `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-         VALUES ($1,$2,$3,$4,$5)`,
+         VALUES (?,?,?,?,?)`,
         [id, file.filename, `/uploads/imoveis/${file.filename}`, false, ordem++]
       );
     }
@@ -293,14 +293,14 @@ router.post('/imoveis/:id/fotos', isAuthenticated, upload.array('fotos', 20), as
 router.delete('/fotos/:id', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const fotoRes = await db.raw('SELECT * FROM imovel_fotos WHERE id = $1', [id]);
+    const fotoRes = await db.raw('SELECT * FROM imovel_fotos WHERE id = ?', [id]);
     const foto = fotoRes.rows[0];
     if (!foto) return res.status(404).json({ error: 'Foto não encontrada.' });
 
     const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
-    await db.raw('DELETE FROM imovel_fotos WHERE id = $1', [id]);
+    await db.raw('DELETE FROM imovel_fotos WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -312,12 +312,12 @@ router.delete('/fotos/:id', isAuthenticated, async (req, res) => {
 router.put('/fotos/:id/principal', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const fotoRes = await db.raw('SELECT imovel_id FROM imovel_fotos WHERE id = $1', [id]);
+    const fotoRes = await db.raw('SELECT imovel_id FROM imovel_fotos WHERE id = ?', [id]);
     const foto = fotoRes.rows[0];
     if (!foto) return res.status(404).json({ error: 'Foto não encontrada.' });
 
-    await db.raw('UPDATE imovel_fotos SET principal = false WHERE imovel_id = $1', [foto.imovel_id]);
-    await db.raw('UPDATE imovel_fotos SET principal = true WHERE id = $1', [id]);
+    await db.raw('UPDATE imovel_fotos SET principal = false WHERE imovel_id = ?', [foto.imovel_id]);
+    await db.raw('UPDATE imovel_fotos SET principal = true WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -330,7 +330,7 @@ router.put('/imoveis/:id/destaque', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.raw(
-      'UPDATE imoveis SET destaque = NOT destaque WHERE id = $1 RETURNING destaque',
+      'UPDATE imoveis SET destaque = NOT destaque WHERE id = ? RETURNING destaque',
       [id]
     );
     res.json({ success: true, destaque: result.rows[0].destaque });
@@ -344,7 +344,7 @@ router.put('/imoveis/:id/ativo', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.raw(
-      'UPDATE imoveis SET ativo = NOT ativo WHERE id = $1 RETURNING ativo',
+      'UPDATE imoveis SET ativo = NOT ativo WHERE id = ? RETURNING ativo',
       [id]
     );
     res.json({ success: true, ativo: result.rows[0].ativo });
@@ -377,7 +377,7 @@ router.get('/contatos', isAuthenticated, async (req, res) => {
 router.put('/contatos/:id/lido', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    await db.raw('UPDATE contatos SET lido = true WHERE id = $1', [id]);
+    await db.raw('UPDATE contatos SET lido = true WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro.' });

@@ -21,7 +21,7 @@ router.post('/admin/login', async (req, res) => {
   }
 
   try {
-    const result = await db.raw('SELECT * FROM admin_users WHERE email = $1 LIMIT 1', [email]);
+    const result = await db.raw('SELECT * FROM admin_users WHERE email = ? LIMIT 1', [email]);
     const user = result.rows[0];
 
     if (!user) {

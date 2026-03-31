@@ -8,6 +8,18 @@ const knex = require('./db');
 
 const app = express();
 const PgSession = connectPgSimple(session);
+const { Pool } = require('pg');
+const pool = new Pool({
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: process.env.DB_PORT || 5433,
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'tradicao_imoveis',
+});
+
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+});
 
 // View engine
 app.set('view engine', 'ejs');
@@ -23,9 +35,8 @@ app.use(methodOverride('_method'));
 app.use(
   session({
     store: new PgSession({
-      knex: knex,
-      tableName: 'session',
-      createTableIfMissing: true,
+      pool: pool,
+      tableName: 'session'
     }),
     secret: process.env.SESSION_SECRET || 'tradicao-secret-key',
     resave: false,
@@ -46,7 +57,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/', require('./routes/public'));
-app.use('/auth', require('./routes/auth'));
+app.use('/', require('./routes/auth'));
 app.use('/admin', require('./routes/admin'));
 app.use('/api', require('./routes/api'));
 
@@ -67,3 +78,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+setInterval(() => console.log('Ping -> Mantendo servidor vivo'), 30000);

@@ -66,7 +66,7 @@ router.get('/imovel/:id', async (req, res) => {
       `SELECT i.*, c.nome AS categoria_nome
        FROM imoveis i
        LEFT JOIN categorias c ON c.id = i.categoria_id
-       WHERE i.id = $1 AND i.ativo = true`,
+       WHERE i.id = ? AND i.ativo = true`,
       [id]
     );
     const imovel = imovelRes.rows[0];
@@ -75,13 +75,13 @@ router.get('/imovel/:id', async (req, res) => {
     imovel.preco_formatado = formatarPreco(imovel.preco);
 
     const fotosRes = await db.raw(
-      'SELECT * FROM imovel_fotos WHERE imovel_id = $1 ORDER BY principal DESC, ordem ASC',
+      'SELECT * FROM imovel_fotos WHERE imovel_id = ? ORDER BY principal DESC, ordem ASC',
       [id]
     );
 
     const imoveisRes = await db.raw(
       `SELECT i.*, (SELECT path FROM imovel_fotos WHERE imovel_id = i.id AND principal = true LIMIT 1) AS foto_principal
-       FROM imoveis i WHERE i.id != $1 AND i.ativo = true ORDER BY RANDOM() LIMIT 3`,
+       FROM imoveis i WHERE i.id != ? AND i.ativo = true ORDER BY RANDOM() LIMIT 3`,
       [id]
     );
     const relacionados = imoveisRes.rows.map((im) => ({
