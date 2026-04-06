@@ -9,6 +9,7 @@ module.exports = {
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || '',
       database: process.env.DB_NAME || 'tradicao_imoveis',
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     },
     migrations: {
       directory: './migrations',
@@ -25,6 +26,7 @@ module.exports = {
       user: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     },
     migrations: {
       directory: './migrations',

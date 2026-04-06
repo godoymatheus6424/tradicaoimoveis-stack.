@@ -79,10 +79,17 @@ async function toggleDestaque(id, btn) {
     const res = await fetch(`/admin/imoveis/${id}/destaque`, { method: 'PUT' });
     const json = await res.json();
     if (json.success) {
-      const isDestaque = json.destaque;
-      btn.textContent = isDestaque ? '★ Destaque' : '☆ Normal';
-      btn.className = `status ${isDestaque ? 'status--destaque' : ''}`;
-      if (!isDestaque) btn.style.background = 'var(--surface-container-high)';
+      // Reseta todos os botões de destaque da tabela
+      document.querySelectorAll('.btn-destaque').forEach(b => {
+        b.textContent = '☆ Normal';
+        b.className = 'status btn-destaque';
+        b.style.background = 'var(--surface-container-high)';
+      });
+      if (json.destaque) {
+        btn.textContent = '★ Destaque';
+        btn.className = 'status status--destaque btn-destaque';
+        btn.style.background = '';
+      }
     }
   } catch (err) {
     alert('Erro ao alterar destaque.');
@@ -155,17 +162,3 @@ async function setPrincipal(id) {
   }
 }
 
-// =====================
-// Method override for PUT/DELETE forms
-// =====================
-document.querySelectorAll('form[action*="?_method="]').forEach((form) => {
-  form.addEventListener('submit', (e) => {
-    const action = form.getAttribute('action');
-    const match = action.match(/\?_method=(\w+)/);
-    if (match) {
-      const hidden = form.querySelector('[name="_method"]');
-      if (hidden) hidden.value = match[1];
-      form.setAttribute('action', action.replace(/\?_method=\w+/, ''));
-    }
-  });
-});

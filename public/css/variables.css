@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Manrope:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap');
 
 :root {
   /* Surface Colors */
-  --surface: #fef9f1;
-  --surface-dim: #ded9d2;
+  --surface: #faf8f5;
+  --surface-dim: #e8e4de;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f8f3eb;
-  --surface-container: #f2ede5;
-  --surface-container-high: #ece8e0;
-  --surface-container-highest: #e7e2da;
+  --surface-container-low: #f4f1ec;
+  --surface-container: #edeae4;
+  --surface-container-high: #e6e2db;
+  --surface-container-highest: #dedad3;
 
   /* Primary */
   --primary: #690008;
@@ -17,13 +17,13 @@
   --on-primary-container: #ff9a91;
 
   /* On Surface */
-  --on-surface: #1d1c17;
-  --on-surface-variant: #58413f;
+  --on-surface: #181713;
+  --on-surface-variant: #5a5550;
 
   /* Secondary */
-  --secondary: #5f5e5e;
+  --secondary: #6b6560;
   --on-secondary: #ffffff;
-  --secondary-container: #e4e2e1;
+  --secondary-container: #e8e4de;
 
   /* Tertiary */
   --tertiary: #472a07;
@@ -31,28 +31,30 @@
   --on-tertiary-fixed: #2c1600;
 
   /* Outline */
-  --outline: #8c716e;
-  --outline-variant: #e0bfbc;
+  --outline: #9a8f8b;
+  --outline-variant: #d6cec9;
 
   /* Error */
   --error: #ba1a1a;
 
   /* Inverse */
-  --inverse-surface: #32302b;
-  --inverse-on-surface: #f5f0e8;
+  --inverse-surface: #1e1c18;
+  --inverse-on-surface: #f0ece4;
 
   /* Typography */
-  --font-serif: 'Newsreader', Georgia, serif;
-  --font-sans: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  /* keep serif var for any leftover references */
+  --font-serif: 'Space Grotesk', system-ui, sans-serif;
 
   /* Type Scale */
-  --display-lg: 3.5rem;
-  --headline-lg: 3rem;
+  --display-lg: 3.75rem;
+  --headline-lg: 2.75rem;
   --headline-md: 1.75rem;
   --title-lg: 1.25rem;
   --body-md: 1rem;
-  --label-md: 0.75rem;
-  --label-sm: 0.625rem;
+  --label-md: 0.8125rem;
+  --label-sm: 0.6875rem;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -61,19 +63,19 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --space-2xl: 3rem;
-  --space-3xl: 4rem;
-  --space-4xl: 6rem;
+  --space-3xl: 4.5rem;
+  --space-4xl: 7rem;
 
-  /* Shadows ambient */
-  --shadow-sm: 0 2px 40px rgba(105, 0, 8, 0.05);
-  --shadow-md: 0 4px 60px rgba(105, 0, 8, 0.07);
-  --shadow-lg: 0 8px 80px rgba(105, 0, 8, 0.08);
+  /* Shadows — mais precisas, menos difusas */
+  --shadow-sm: 0 1px 3px rgba(24, 23, 19, 0.06), 0 1px 2px rgba(24, 23, 19, 0.04);
+  --shadow-md: 0 4px 12px rgba(24, 23, 19, 0.08), 0 2px 4px rgba(24, 23, 19, 0.04);
+  --shadow-lg: 0 12px 32px rgba(24, 23, 19, 0.1), 0 4px 8px rgba(24, 23, 19, 0.04);
 
-  /* Border radius */
-  --radius-xs: 0.125rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
+  /* Border radius — mais agressivo/afiado */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
 
   /* Transitions */
-  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }

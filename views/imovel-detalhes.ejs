@@ -1,133 +1,133 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<section class="detalhes-header">
-  <div class="container">
-    <div class="detalhes-breadcrumb">
-      <a href="/">Home</a> &rsaquo; <a href="/imoveis">Imóveis</a> &rsaquo; <%= imovel.titulo %>
-    </div>
-    <h1 style="font-family:var(--font-serif);font-size:var(--headline-md);font-weight:400;margin-bottom:0.5rem;"><%= imovel.titulo %></h1>
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-      <% if (imovel.destaque) { %><span class="badge badge--primary">Destaque</span><% } %>
-      <% if (imovel.novo) { %><span class="badge badge--new">Novo</span><% } %>
-      <span style="font-size:var(--label-md);color:var(--on-surface-variant);">
-        <% if (imovel.bairro) { %><%= imovel.bairro %>, <% } %><%= imovel.cidade %> — <%= imovel.estado %>
-      </span>
-      <span class="badge" style="background:var(--secondary-container);color:var(--on-surface);text-transform:capitalize;"><%= imovel.finalidade %></span>
-    </div>
-  </div>
-</section>
-
 <section class="detalhes-content">
   <div class="container">
+
+    <div class="detalhes-breadcrumb" style="padding-top:var(--space-xl);margin-bottom:var(--space-lg);">
+      <a href="/">Home</a> &rsaquo; <a href="/imoveis">Imóveis</a> &rsaquo; <%= imovel.tipo %>
+    </div>
+
     <div class="detalhes-layout">
-      <!-- Main content -->
-      <div>
-        <!-- Galeria -->
-        <div class="galeria fade-in">
-          <% if (fotos && fotos.length > 0) { %>
-          <div class="galeria__principal" id="galeriaPrincipal" onclick="abrirLightbox(0)">
-            <img id="fotoAtiva" src="<%= fotos[0].path %>" alt="<%= imovel.titulo %>">
-          </div>
-          <% if (fotos.length > 1) { %>
-          <div class="galeria__thumbs">
-            <% fotos.forEach(function(foto, i) { %>
-            <div class="galeria__thumb <%= i === 0 ? 'galeria__thumb--active' : '' %>" onclick="trocarFoto('<%= foto.path %>', this, <%= i %>)">
-              <img src="<%= foto.path %>" alt="Foto <%= i + 1 %>">
+
+      <!-- ESQUERDA: Galeria -->
+      <div class="detalhes-galeria">
+        <% if (fotos && fotos.length > 0) { %>
+        <div class="galeria__principal" id="galeriaPrincipal" onclick="abrirLightbox(fotoAtualIdx)">
+          <img id="fotoAtiva" src="<%= fotos[0].path %>" alt="<%= imovel.titulo %>">
+        </div>
+        <% if (fotos.length > 1) { %>
+        <div style="position:relative;display:flex;align-items:center;gap:8px;margin-top:var(--space-xs);">
+          <button id="thumbPrev" onclick="thumbNav(-1)" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--outline-variant);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;" onmouseenter="this.style.background='var(--surface-container-high)'" onmouseleave="this.style.background='var(--surface)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div style="overflow:hidden;flex:1;">
+            <div id="thumbTrack" style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-xs);">
+              <% fotos.forEach(function(foto, i) { %>
+              <div class="galeria__thumb <%= i === 0 ? 'galeria__thumb--active' : '' %>" data-idx="<%= i %>" onclick="trocarFoto('<%= foto.path %>', this, <%= i %>)" style="display:none;">
+                <img src="<%= foto.path %>" alt="Foto <%= i + 1 %>">
+              </div>
+              <% }) %>
             </div>
-            <% }) %>
           </div>
-          <% } %>
-          <% } else { %>
-          <div style="aspect-ratio:4/3;background:var(--surface-container-high);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
-            <span style="font-size:5rem;">🏠</span>
-          </div>
-          <% } %>
+          <button id="thumbNext" onclick="thumbNav(1)" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--outline-variant);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;" onmouseenter="this.style.background='var(--surface-container-high)'" onmouseleave="this.style.background='var(--surface)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
-
-        <!-- Specs -->
-        <div class="detalhes-specs fade-in" style="border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">
-          <% if (imovel.quartos > 0) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">🛏</div>
-            <div class="detalhes-spec__value"><%= imovel.quartos %></div>
-            <div class="detalhes-spec__label">Quartos</div>
-          </div>
-          <% } %>
-          <% if (imovel.suites > 0) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">✨</div>
-            <div class="detalhes-spec__value"><%= imovel.suites %></div>
-            <div class="detalhes-spec__label">Suítes</div>
-          </div>
-          <% } %>
-          <% if (imovel.banheiros > 0) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">🚿</div>
-            <div class="detalhes-spec__value"><%= imovel.banheiros %></div>
-            <div class="detalhes-spec__label">Banheiros</div>
-          </div>
-          <% } %>
-          <% if (imovel.vagas_garagem > 0) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">🚗</div>
-            <div class="detalhes-spec__value"><%= imovel.vagas_garagem %></div>
-            <div class="detalhes-spec__label">Vagas</div>
-          </div>
-          <% } %>
-          <% if (imovel.area_total) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">📐</div>
-            <div class="detalhes-spec__value"><%= Math.round(imovel.area_total) %></div>
-            <div class="detalhes-spec__label">m² Total</div>
-          </div>
-          <% } %>
-          <% if (imovel.area_construida) { %>
-          <div class="detalhes-spec">
-            <div class="detalhes-spec__icon">🏗</div>
-            <div class="detalhes-spec__value"><%= Math.round(imovel.area_construida) %></div>
-            <div class="detalhes-spec__label">m² Construído</div>
-          </div>
-          <% } %>
-        </div>
-
-        <!-- Preço -->
-        <div class="detalhes-price fade-in"><%= imovel.preco_formatado %></div>
-
-        <!-- Descrição -->
-        <% if (imovel.descricao) { %>
-        <div class="fade-in" style="margin-bottom:var(--space-2xl);">
-          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1rem;">Descrição</h3>
-          <p style="color:var(--on-surface-variant);line-height:1.8;white-space:pre-line;"><%= imovel.descricao %></p>
-        </div>
+        <div id="thumbCounter" style="text-align:center;font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:6px;"></div>
         <% } %>
-
-        <!-- Localização -->
-        <% if (imovel.endereco || imovel.bairro) { %>
-        <div class="fade-in">
-          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1rem;">Localização</h3>
-          <p style="color:var(--on-surface-variant);">
-            <% if (imovel.endereco) { %><%= imovel.endereco %><br><% } %>
-            <% if (imovel.bairro) { %><%= imovel.bairro %> — <% } %>
-            <%= imovel.cidade %> / <%= imovel.estado %>
-            <% if (imovel.cep) { %> · CEP <%= imovel.cep %><% } %>
-          </p>
+        <% } else { %>
+        <div style="aspect-ratio:4/3;background:var(--surface-container-high);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:5rem;">🏠</span>
         </div>
         <% } %>
       </div>
 
-      <!-- Sidebar -->
-      <aside class="detalhes-sidebar fade-in">
-        <div class="sidebar-card">
-          <div class="sidebar-card__title">Interesse neste imóvel?</div>
-          <a href="https://wa.me/5544998870006?text=Olá! Tenho interesse no imóvel: <%= encodeURIComponent(imovel.titulo) %>" target="_blank" class="btn btn--whatsapp btn--full" style="margin-bottom:0.75rem;">
-            WhatsApp
-          </a>
+      <!-- DIREITA: Informações + Contato -->
+      <div class="detalhes-info">
+
+        <!-- Tags -->
+        <div class="detalhes-header__tags" style="margin-bottom:var(--space-md);">
+          <span class="detalhes-tag detalhes-tag--tipo"><%= imovel.tipo %></span>
+          <span class="detalhes-tag detalhes-tag--finalidade"><%= imovel.finalidade === 'locacao' ? 'Aluguel' : 'Venda' %></span>
+          <span class="detalhes-tag detalhes-tag--ref">Ref: #<%= String(imovel.id).padStart(4,'0') %></span>
+          <% if (imovel.destaque) { %><span class="detalhes-tag detalhes-tag--destaque">Destaque</span><% } %>
+        </div>
+
+        <!-- Título -->
+        <h1 class="detalhes-header__title" style="margin-bottom:var(--space-sm);"><%= imovel.titulo %></h1>
+
+        <!-- Endereço -->
+        <% if (imovel.endereco || imovel.bairro || imovel.cidade) { %>
+        <div class="detalhes-header__address" style="margin-bottom:var(--space-lg);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <%= [imovel.endereco, imovel.bairro, imovel.cidade, imovel.estado].filter(Boolean).join(', ') %>
+        </div>
+        <% } %>
+
+        <!-- Preço -->
+        <div style="margin-bottom:var(--space-xl);padding-bottom:var(--space-lg);border-bottom:1px solid var(--outline-variant);">
+          <div class="detalhes-header__price-label"><%= imovel.finalidade === 'aluguel' ? 'Aluguel' : 'Valor' %></div>
+          <div class="detalhes-header__price-value"><%= imovel.preco_formatado %></div>
+        </div>
+
+        <!-- Specs inline -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:var(--space-xl);padding-bottom:var(--space-lg);border-bottom:1px solid var(--outline-variant);">
+          <% if (imovel.quartos > 0) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M3 20V8a2 2 0 012-2h14a2 2 0 012 2v12"/><path d="M3 14h18"/><path d="M7 14v6"/><path d="M17 14v6"/></svg>
+            <strong style="color:var(--on-surface);"><%= imovel.quartos %></strong> Quartos
+          </div>
+          <% } %>
+          <% if (imovel.suites > 0) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M3 20V10a2 2 0 012-2h14a2 2 0 012 2v10"/><path d="M3 14h18"/><path d="M9 8V6a1 1 0 011-1h4a1 1 0 011 1v2"/><path d="M7 20v-6"/><path d="M17 20v-6"/></svg>
+            <strong style="color:var(--on-surface);"><%= imovel.suites %></strong> Suítes
+          </div>
+          <% } %>
+          <% if (imovel.banheiros > 0) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M4 12h16"/><path d="M4 12V6a2 2 0 012-2h4a2 2 0 012 2v6"/><rect x="2" y="12" width="20" height="4" rx="1"/><path d="M6 20v-4"/><path d="M18 20v-4"/></svg>
+            <strong style="color:var(--on-surface);"><%= imovel.banheiros %></strong> Banheiros
+          </div>
+          <% } %>
+          <% if (imovel.vagas_garagem > 0) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/></svg>
+            <strong style="color:var(--on-surface);"><%= imovel.vagas_garagem %></strong> Vagas
+          </div>
+          <% } %>
+          <% if (imovel.area_total) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+            <strong style="color:var(--on-surface);"><%= Math.round(imovel.area_total) %> m²</strong> Total
+          </div>
+          <% } %>
+          <% if (imovel.area_construida) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M2 20h20"/><path d="M6 20V8l6-6 6 6v12"/><path d="M10 20v-6h4v6"/></svg>
+            <strong style="color:var(--on-surface);"><%= Math.round(imovel.area_construida) %> m²</strong> Construído
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Descrição -->
+        <% if (imovel.descricao) { %>
+        <div style="margin-bottom:var(--space-xl);padding-bottom:var(--space-lg);border-bottom:1px solid var(--outline-variant);">
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-md);margin-bottom:0.75rem;">Descrição</h3>
+          <p style="color:var(--on-surface-variant);line-height:1.8;white-space:pre-line;font-size:var(--label-md);"><%= imovel.descricao %></p>
+        </div>
+        <% } %>
+
+        <!-- Botões de contato -->
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:var(--space-xl);">
+          <a href="https://wa.me/5544998870006?text=Olá! Tenho interesse no imóvel: <%= encodeURIComponent(imovel.titulo) %>" target="_blank" class="btn btn--whatsapp btn--full">WhatsApp</a>
           <a href="/contato?imovel=<%= imovel.id %>" class="btn btn--secondary btn--full">Agendar Visita</a>
         </div>
 
-        <div class="sidebar-card">
-          <div class="sidebar-card__title">Enviar Mensagem</div>
+        <!-- Formulário de contato -->
+        <div style="padding:1.5rem;background:var(--surface-container-low);border-radius:var(--radius-md);">
+          <div style="font-family:var(--font-serif);font-size:var(--title-md);margin-bottom:1rem;">Enviar Mensagem</div>
           <form id="formContato">
             <input type="hidden" name="imovel_id" value="<%= imovel.id %>">
             <div class="input-group">
@@ -140,20 +140,15 @@
               <input type="tel" class="input" name="telefone" placeholder="Telefone">
             </div>
             <div class="input-group">
-              <textarea class="input" name="mensagem" placeholder="Mensagem..." rows="3"></textarea>
+              <textarea class="input" name="mensagem" rows="3">Olá! Tenho interesse no imóvel <%= imovel.titulo %>.</textarea>
             </div>
             <button type="submit" class="btn btn--primary btn--full">Enviar Mensagem</button>
             <div id="contatoMsg" style="margin-top:0.75rem;font-size:var(--label-md);text-align:center;"></div>
           </form>
         </div>
 
-        <div class="sidebar-card" style="background:var(--surface-container-low);">
-          <div style="font-size:var(--label-sm);text-transform:uppercase;letter-spacing:0.2em;color:var(--on-surface-variant);margin-bottom:0.5rem;">Código do Imóvel</div>
-          <div style="font-family:var(--font-serif);font-size:1.25rem;">#<%= String(imovel.id).padStart(4, '0') %></div>
-          <div style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:0.5rem;text-transform:capitalize;"><%= imovel.tipo %> · <%= imovel.finalidade %></div>
-        </div>
-      </aside>
-    </div>
+      </div><!-- /detalhes-info -->
+    </div><!-- /detalhes-layout -->
   </div>
 </section>
 
@@ -233,6 +228,42 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowLeft') navLightbox(-1);
   if (e.key === 'ArrowRight') navLightbox(1);
 });
+
+// Carrossel de thumbs (4 por página)
+(function() {
+  const thumbs = Array.from(document.querySelectorAll('#thumbTrack .galeria__thumb'));
+  if (!thumbs.length) return;
+  const PER_PAGE = 4;
+  let page = 0;
+  const total = Math.ceil(thumbs.length / PER_PAGE);
+
+  function render() {
+    thumbs.forEach((t, i) => {
+      t.style.display = (i >= page * PER_PAGE && i < (page + 1) * PER_PAGE) ? '' : 'none';
+    });
+    const counter = document.getElementById('thumbCounter');
+    if (counter && total > 1) counter.textContent = `${page + 1} / ${total}`;
+    else if (counter) counter.textContent = '';
+    const prev = document.getElementById('thumbPrev');
+    const next = document.getElementById('thumbNext');
+    if (prev) prev.style.opacity = page === 0 ? '0.3' : '1';
+    if (next) next.style.opacity = page === total - 1 ? '0.3' : '1';
+  }
+
+  window.thumbNav = function(dir) {
+    page = Math.max(0, Math.min(total - 1, page + dir));
+    render();
+  };
+
+  const _orig = window.trocarFoto;
+  window.trocarFoto = function(src, el, idx) {
+    _orig(src, el, idx);
+    const newPage = Math.floor(idx / PER_PAGE);
+    if (newPage !== page) { page = newPage; render(); }
+  };
+
+  render();
+})();
 </script>
 <script src="/js/main.js"></script>
 <script src="/js/contato.js"></script>

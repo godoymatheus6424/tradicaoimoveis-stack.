@@ -1,15 +1,15 @@
 // =====================
-// IMOVEIS PAGE — filtros + fetch + paginação
+// IMOVEIS PAGE — filtros + grid + liquid glass cards
 // =====================
 let paginaAtual = 1;
 const LIMIT = 12;
 
 function getFiltros() {
   return {
-    tipo: document.getElementById('filtroTipo')?.value || '',
-    finalidade: document.getElementById('filtroFinalidade')?.value || '',
-    preco_max: document.getElementById('filtroPrecoMax')?.value || '',
-    quartos: document.getElementById('filtroQuartos')?.value || '',
+    tipo:         document.getElementById('filtroTipo')?.value || '',
+    finalidade:   document.getElementById('filtroFinalidade')?.value || '',
+    preco_max:    document.getElementById('filtroPrecoMax')?.value || '',
+    quartos:      document.getElementById('filtroQuartos')?.value || '',
     categoria_id: document.getElementById('filtroCategoria')?.value || '',
   };
 }
@@ -17,40 +17,40 @@ function getFiltros() {
 function cardImovel(im) {
   const foto = im.foto_principal
     ? `<img src="${im.foto_principal}" alt="${im.titulo}" loading="lazy">`
-    : `<div style="width:100%;height:100%;background:var(--surface-container-high);display:flex;align-items:center;justify-content:center;font-size:3rem;">🏠</div>`;
+    : `<div class="glass-card__placeholder">🏠</div>`;
 
   const badge = im.destaque
-    ? `<div class="card__badge"><span class="badge badge--primary">Destaque</span></div>`
+    ? `<div class="glass-card__badge"><span class="glass-badge glass-badge--destaque">Destaque</span></div>`
     : im.novo
-    ? `<div class="card__badge"><span class="badge badge--new">Novo</span></div>`
+    ? `<div class="glass-card__badge"><span class="glass-badge glass-badge--novo">Novo</span></div>`
     : '';
 
   const specs = [
-    im.quartos > 0 ? `<span class="card__spec">🛏 ${im.quartos}</span>` : '',
-    im.banheiros > 0 ? `<span class="card__spec">🚿 ${im.banheiros}</span>` : '',
-    im.area_total ? `<span class="card__spec">📐 ${Math.round(im.area_total)}m²</span>` : '',
-    im.vagas_garagem > 0 ? `<span class="card__spec">🚗 ${im.vagas_garagem}</span>` : '',
-  ]
-    .filter(Boolean)
-    .join('');
+    im.quartos > 0       ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20V8a2 2 0 012-2h14a2 2 0 012 2v12"/><path d="M3 14h18"/><path d="M7 14v6"/><path d="M17 14v6"/></svg>${im.quartos}</span>` : '',
+    im.banheiros > 0     ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/><path d="M4 12V6a2 2 0 012-2h4a2 2 0 012 2v6"/><rect x="2" y="12" width="20" height="4" rx="1"/><path d="M6 20v-4"/><path d="M18 20v-4"/></svg>${im.banheiros}</span>` : '',
+    im.area_total        ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>${Math.round(im.area_total)}m²</span>` : '',
+    im.vagas_garagem > 0 ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/></svg>${im.vagas_garagem}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const location = [im.bairro, im.cidade].filter(Boolean).join(', ');
 
   return `
-    <div class="card fade-in">
-      <div class="card__image">
-        ${badge}
-        ${foto}
-      </div>
-      <div class="card__body">
-        <div class="card__category">${im.categoria_nome || im.tipo}</div>
-        <div class="card__title">${im.titulo}</div>
-        <div class="card__specs">${specs}</div>
-        <div class="card__price">${im.preco_formatado}</div>
-        <div class="card__footer">
-          <span class="card__location">${im.bairro ? im.bairro + ', ' : ''}${im.cidade}</span>
-          <a href="/imovel/${im.id}" class="btn btn--ghost btn--sm">Saiba Mais</a>
+    <a href="/imovel/${im.id}" class="glass-card">
+      <div class="glass-card__media">${foto}</div>
+      ${badge}
+      <div class="glass-card__glass">
+        <div class="glass-card__type">${im.categoria_nome || im.tipo}</div>
+        <div class="glass-card__title">${im.titulo}</div>
+        ${specs ? `<div class="glass-card__specs">${specs}</div>` : ''}
+        <div class="glass-card__footer">
+          <div class="glass-card__price">${im.preco_formatado}</div>
+          <div class="glass-card__location">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            ${location}
+          </div>
         </div>
       </div>
-    </div>
+    </a>
   `;
 }
 
@@ -60,34 +60,30 @@ function renderPaginacao(pagination) {
   if (pagination.pages <= 1) { el.innerHTML = ''; return; }
 
   let html = '';
-  if (paginaAtual > 1) {
+  if (paginaAtual > 1)
     html += `<button class="pagination__btn" onclick="buscarImoveis(${paginaAtual - 1})">&#8249;</button>`;
-  }
-  for (let i = 1; i <= pagination.pages; i++) {
+  for (let i = 1; i <= pagination.pages; i++)
     html += `<button class="pagination__btn ${i === paginaAtual ? 'pagination__btn--active' : ''}" onclick="buscarImoveis(${i})">${i}</button>`;
-  }
-  if (paginaAtual < pagination.pages) {
+  if (paginaAtual < pagination.pages)
     html += `<button class="pagination__btn" onclick="buscarImoveis(${paginaAtual + 1})">&#8250;</button>`;
-  }
   el.innerHTML = html;
 }
 
 async function buscarImoveis(pagina = 1) {
   paginaAtual = pagina;
-  const filtros = getFiltros();
-  const params = new URLSearchParams({ ...filtros, page: pagina, limit: LIMIT });
+  const params = new URLSearchParams({ ...getFiltros(), page: pagina, limit: LIMIT });
 
   const loading = document.getElementById('loading');
-  const grid = document.getElementById('imoveisGrid');
-  const empty = document.getElementById('emptyState');
-  const count = document.getElementById('imoveisCount');
+  const grid    = document.getElementById('imoveisGrid');
+  const empty   = document.getElementById('emptyState');
+  const count   = document.getElementById('imoveisCount');
 
-  if (loading) loading.style.display = 'block';
-  if (grid) grid.innerHTML = '';
-  if (empty) empty.style.display = 'none';
+  if (loading) loading.style.display = 'flex';
+  if (grid)    grid.innerHTML = '';
+  if (empty)   empty.style.display = 'none';
 
   try {
-    const res = await fetch(`/api/imoveis?${params}`);
+    const res  = await fetch(`/api/imoveis?${params}`);
     const json = await res.json();
 
     if (loading) loading.style.display = 'none';
@@ -100,51 +96,31 @@ async function buscarImoveis(pagina = 1) {
     }
 
     if (count) {
-      count.textContent = `${json.pagination.total} imóvel${json.pagination.total !== 1 ? 's' : ''} encontrado${json.pagination.total !== 1 ? 's' : ''}`;
+      const t = json.pagination.total;
+      count.textContent = `${t} imóvel${t !== 1 ? 's' : ''} encontrado${t !== 1 ? 's' : ''}`;
     }
 
-    if (grid) {
-      grid.innerHTML = json.data.map(cardImovel).join('');
-      // Re-trigger fade-in
-      setTimeout(() => {
-        if (window.setupFadeIn) setupFadeIn();
-        else {
-          document.querySelectorAll('.fade-in').forEach(el => {
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
-          });
-        }
-      }, 50);
-    }
-
+    if (grid) grid.innerHTML = json.data.map(cardImovel).join('');
     renderPaginacao(json.pagination);
-    window.scrollTo({ top: document.querySelector('.imoveis-grid')?.offsetTop - 80 || 0, behavior: 'smooth' });
+    window.scrollTo({ top: document.querySelector('.imoveis-carousel-section')?.offsetTop - 70 || 0, behavior: 'smooth' });
   } catch (err) {
     console.error(err);
     if (loading) loading.style.display = 'none';
   }
 }
 
-// Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  const btnBuscar = document.getElementById('btnBuscar');
-  if (btnBuscar) {
-    btnBuscar.addEventListener('click', () => buscarImoveis(1));
-  }
+  document.getElementById('btnBuscar')?.addEventListener('click', () => buscarImoveis(1));
 
-  ['filtroTipo', 'filtroFinalidade', 'filtroQuartos', 'filtroCategoria'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', () => buscarImoveis(1));
+  ['filtroTipo', 'filtroFinalidade', 'filtroQuartos', 'filtroCategoria'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => buscarImoveis(1));
   });
 
-  const precoInput = document.getElementById('filtroPrecoMax');
-  if (precoInput) {
-    let timer;
-    precoInput.addEventListener('input', () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => buscarImoveis(1), 600);
-    });
-  }
+  let timer;
+  document.getElementById('filtroPrecoMax')?.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => buscarImoveis(1), 600);
+  });
 
   buscarImoveis(1);
 });

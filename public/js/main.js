@@ -1,29 +1,4 @@
 // =====================
-// HAMBURGER MENU
-// =====================
-const hamburger = document.getElementById('hamburger');
-const navLinks = document.getElementById('navLinks');
-
-if (hamburger && navLinks) {
-  hamburger.addEventListener('click', () => {
-    navLinks.classList.toggle('nav__links--open');
-    const isOpen = navLinks.classList.contains('nav__links--open');
-    hamburger.setAttribute('aria-expanded', isOpen);
-    // Anima ícone
-    const spans = hamburger.querySelectorAll('span');
-    if (isOpen) {
-      spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-      spans[1].style.opacity = '0';
-      spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
-    } else {
-      spans[0].style.transform = '';
-      spans[1].style.opacity = '';
-      spans[2].style.transform = '';
-    }
-  });
-}
-
-// =====================
 // FADE IN on scroll
 // =====================
 function setupFadeIn() {
@@ -49,7 +24,7 @@ function setupFadeIn() {
 }
 
 // =====================
-// SMOOTH SCROLL
+// SMOOTH SCROLL âncoras
 // =====================
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener('click', (e) => {

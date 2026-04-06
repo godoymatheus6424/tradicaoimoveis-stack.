@@ -28,6 +28,35 @@
       </div>
       <% } %>
 
+      <!-- Upload de pasta do imóvel -->
+      <div class="admin-form" style="margin-bottom:1.5rem;background:var(--surface-container-low);border:1.5px dashed var(--outline-variant);border-radius:var(--radius-md);padding:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Importar pasta do imóvel</div>
+            <div style="font-size:var(--label-sm);color:var(--on-surface-variant);">Selecione a pasta do imóvel — ela pode conter um PDF ou DOCX com as informações e as fotos. Os campos serão preenchidos automaticamente e você escolhe a foto principal.</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <label class="btn btn--primary btn--sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              Carregar pasta
+              <input type="file" id="pastaInput" webkitdirectory multiple style="display:none;" onchange="processarPasta(this)">
+            </label>
+            <label class="btn btn--secondary btn--sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Só a ficha (PDF/DOCX)
+              <input type="file" id="fichaInput" accept=".pdf,.docx" style="display:none;" onchange="processarFicha(this)">
+            </label>
+          </div>
+        </div>
+        <div id="fichaStatus" style="display:none;margin-top:1rem;padding:0.75rem 1rem;border-radius:var(--radius-sm);font-size:var(--label-sm);"></div>
+
+        <!-- Preview das fotos da pasta -->
+        <div id="pastaFotosWrap" style="display:none;margin-top:1.25rem;">
+          <div style="font-size:var(--label-sm);font-weight:600;margin-bottom:0.75rem;color:var(--on-surface-variant);">FOTOS ENCONTRADAS — clique para definir a principal</div>
+          <div id="pastaFotosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;"></div>
+        </div>
+      </div>
+
       <form
         method="POST"
         action="<%= imovel ? '/admin/imoveis/' + imovel.id + '?_method=PUT' : '/admin/imoveis' %>"
@@ -62,8 +91,15 @@
               </select>
             </div>
             <div>
-              <label class="input-label">Preço (R$) *</label>
-              <input type="number" name="preco" class="input" step="0.01" min="0" required value="<%= imovel ? imovel.preco : '' %>" placeholder="Ex: 850000">
+              <label class="input-label">Preço (R$)</label>
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <input type="hidden" id="precoHidden" name="preco" value="<%= imovel ? imovel.preco : '' %>">
+                <input type="number" id="precoInput" class="input" step="0.01" min="0" value="<%= imovel ? imovel.preco : '' %>" placeholder="Ex: 850000" style="flex:1;" oninput="document.getElementById('precoHidden').value=this.value" <%= (imovel && Number(imovel.preco) === 0) ? 'disabled' : '' %>>
+                <label style="display:flex;align-items:center;gap:0.4rem;white-space:nowrap;cursor:pointer;font-size:var(--label-sm);color:var(--on-surface-variant);">
+                  <input type="checkbox" id="sobConsultaCheck" onchange="toggleSobConsulta(this)" <%= (imovel && Number(imovel.preco) === 0) ? 'checked' : '' %>>
+                  Sob consulta
+                </label>
+              </div>
             </div>
             <div>
               <label class="input-label">Categoria</label>
@@ -172,7 +208,7 @@
           <% } %>
 
           <!-- Upload novas fotos -->
-          <div style="margin-top:1.5rem;border-top:1px solid var(--surface-container-high);padding-top:1.5rem;">
+          <div id="uploadFotosManual" style="margin-top:1.5rem;border-top:1px solid var(--surface-container-high);padding-top:1.5rem;">
             <label class="input-label" style="margin-bottom:1rem;">Adicionar Fotos</label>
             <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotosInput').click()">
               <div class="upload-area__icon">📷</div>
@@ -195,5 +231,177 @@
   </main>
 </div>
 <script src="/js/admin.js"></script>
+<script>
+// ── Sob Consulta ──
+function toggleSobConsulta(cb) {
+  const input = document.getElementById('precoInput');
+  const hidden = document.getElementById('precoHidden');
+  if (cb.checked) {
+    input.dataset.prevValue = input.value;
+    input.value = '';
+    input.disabled = true;
+    hidden.value = '0';
+  } else {
+    input.value = input.dataset.prevValue || '';
+    input.disabled = false;
+    hidden.value = input.value;
+    input.focus();
+  }
+}
+
+// ── Fotos da pasta selecionadas (File[]) e qual é a principal ──
+let _pastaFotos = [];
+let _principalIdx = 0;
+
+// Preenche campos do formulário com dados extraídos
+function preencherCampos(d) {
+  const set = (name, val) => {
+    if (val == null || val === '') return;
+    const el = document.querySelector(`[name="${name}"]`);
+    if (!el) return;
+    el.value = val;
+  };
+  set('titulo', d.titulo); set('tipo', d.tipo); set('finalidade', d.finalidade);
+  // Preço: se o documento trouxer valor, desmarca "sob consulta" e preenche
+  if (d.preco != null && d.preco > 0) {
+    const cb = document.getElementById('sobConsultaCheck');
+    if (cb && cb.checked) toggleSobConsulta({ checked: false }), cb.checked = false;
+    document.getElementById('precoInput').value = d.preco;
+    document.getElementById('precoHidden').value = d.preco;
+  }
+  set('quartos', d.quartos); set('suites', d.suites);
+  set('banheiros', d.banheiros); set('vagas_garagem', d.vagas_garagem);
+  set('area_total', d.area_total); set('area_construida', d.area_construida);
+  set('endereco', d.endereco); set('bairro', d.bairro);
+  set('cidade', d.cidade); set('estado', d.estado); set('descricao', d.descricao);
+}
+
+// Chama API de parse e retorna os dados extraídos
+async function chamarParseDoc(file) {
+  const fd = new FormData();
+  fd.append('ficha', file);
+  const res = await fetch('/admin/imoveis/parse-doc', { method: 'POST', body: fd });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao processar documento');
+  return json.data;
+}
+
+// Mostra status
+function setStatus(msg, tipo) {
+  const el = document.getElementById('fichaStatus');
+  el.style.display = 'block';
+  el.style.background = tipo === 'ok' ? '#d1fae5' : tipo === 'erro' ? '#fee2e2' : 'var(--surface-container)';
+  el.style.color     = tipo === 'ok' ? '#065f46' : tipo === 'erro' ? '#991b1b' : 'var(--on-surface-variant)';
+  el.textContent = msg;
+}
+
+// Renderiza grid de fotos com seleção de principal
+function renderizarFotos(files) {
+  _pastaFotos = files;
+  _principalIdx = 0;
+  const wrap = document.getElementById('pastaFotosWrap');
+  const grid = document.getElementById('pastaFotosGrid');
+  if (!files.length) { wrap.style.display = 'none'; return; }
+  document.getElementById('uploadFotosManual').style.display = 'none';
+  wrap.style.display = 'block';
+  grid.innerHTML = '';
+  files.forEach((file, i) => {
+    const url = URL.createObjectURL(file);
+    const div = document.createElement('div');
+    div.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;border:2.5px solid transparent;transition:border-color .2s';
+    div.dataset.idx = i;
+    if (i === 0) div.style.borderColor = 'var(--primary)';
+
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 4px;border-radius:4px;display:none;';
+    badge.style.background = 'var(--primary)';
+    badge.style.color = '#fff';
+    badge.textContent = 'PRINCIPAL';
+    if (i === 0) badge.style.display = 'block';
+
+    div.appendChild(img);
+    div.appendChild(badge);
+    div.addEventListener('click', () => selecionarPrincipal(i));
+    grid.appendChild(div);
+  });
+  sincronizarFotosInput();
+}
+
+function selecionarPrincipal(idx) {
+  _principalIdx = idx;
+  document.querySelectorAll('#pastaFotosGrid > div').forEach((div, i) => {
+    const isPrincipal = i === idx;
+    div.style.borderColor = isPrincipal ? 'var(--primary)' : 'transparent';
+    div.querySelector('div').style.display = isPrincipal ? 'block' : 'none';
+  });
+  sincronizarFotosInput();
+}
+
+// Atualiza o input de fotos do formulário: principal primeiro, depois as demais
+function sincronizarFotosInput() {
+  if (!_pastaFotos.length) return;
+  const ordered = [_pastaFotos[_principalIdx], ..._pastaFotos.filter((_, i) => i !== _principalIdx)];
+  const dt = new DataTransfer();
+  ordered.forEach(f => dt.items.add(f));
+  document.getElementById('fotosInput').files = dt.files;
+  // Atualiza preview do campo de fotos
+  previewFotos(document.getElementById('fotosInput'));
+}
+
+// ── Carregar pasta ──
+async function processarPasta(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  const docFile   = files.find(f => /\.(pdf|docx)$/i.test(f.name));
+  const imageFiles = files.filter(f => /\.(jpe?g|png|webp)$/i.test(f.name));
+
+  let msgs = [];
+  setStatus('Processando pasta…', 'carregando');
+
+  // Processar documento
+  if (docFile) {
+    try {
+      const dados = await chamarParseDoc(docFile);
+      preencherCampos(dados);
+      msgs.push(`✓ Ficha lida (${docFile.name})`);
+    } catch (e) {
+      msgs.push(`⚠ Erro na ficha: ${e.message}`);
+    }
+  } else {
+    msgs.push('⚠ Nenhum PDF ou DOCX encontrado na pasta');
+  }
+
+  // Processar fotos
+  if (imageFiles.length) {
+    renderizarFotos(imageFiles);
+    msgs.push(`✓ ${imageFiles.length} foto(s) carregada(s) — clique para definir a principal`);
+  } else {
+    msgs.push('⚠ Nenhuma foto encontrada na pasta');
+  }
+
+  setStatus(msgs.join(' · '), docFile ? 'ok' : 'erro');
+  input.value = '';
+}
+
+// ── Carregar só a ficha ──
+async function processarFicha(input) {
+  const file = input.files[0];
+  if (!file) return;
+  setStatus('Processando arquivo…', 'carregando');
+  try {
+    const dados = await chamarParseDoc(file);
+    preencherCampos(dados);
+    setStatus('✓ Campos preenchidos com sucesso! Revise antes de salvar.', 'ok');
+  } catch (err) {
+    setStatus('✕ ' + err.message, 'erro');
+  }
+  input.value = '';
+}
+</script>
 </body>
 </html>

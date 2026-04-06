@@ -22,9 +22,33 @@
       </div>
     </div>
     <div class="admin-content">
+
+      <!-- Barra de ações em lote -->
+      <div id="bulkBar" style="display:none;align-items:center;gap:1rem;background:var(--surface-container-high);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;">
+        <span id="bulkCount" style="font-weight:600;color:var(--on-surface-variant);font-size:var(--label-md);"></span>
+        <button onclick="excluirSelecionados()" class="btn btn--sm" style="background:var(--error);color:#fff;border:none;">Excluir selecionados</button>
+        <button onclick="desmarcarTodos()" class="btn btn--secondary btn--sm">Cancelar</button>
+      </div>
+
+      <!-- Campo de busca -->
+      <div id="searchWrap" style="display:none;margin-bottom:1rem;">
+        <div style="position:relative;max-width:400px;">
+          <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--on-surface-variant);" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="text" class="input" placeholder="Buscar por nome do imóvel…" oninput="filtrarTabela(this.value)" style="padding-left:2rem;height:36px;font-size:var(--label-md);" autofocus>
+        </div>
+        <div id="searchInfo" style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:0.4rem;"></div>
+      </div>
+
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
         <div style="font-size:var(--label-md);color:var(--on-surface-variant);"><%= imoveis.length %> imóveis cadastrados</div>
-        <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="toggleBusca()" id="btnBusca" class="btn btn--secondary btn--sm" title="Buscar imóvel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Buscar
+          </button>
+          <button onclick="selecionarTodos()" id="btnSelecionarTodos" class="btn btn--secondary btn--sm">Selecionar todos</button>
+          <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
+        </div>
       </div>
 
       <div class="admin-table-wrap">
@@ -43,7 +67,7 @@
           </thead>
           <tbody>
             <% imoveis.forEach(function(im) { %>
-            <tr id="row-<%= im.id %>">
+            <tr id="row-<%= im.id %>" style="transition:background .15s;">
               <td>
                 <% if (im.foto_principal) { %>
                   <img class="admin-table__thumb" src="<%= im.foto_principal %>" alt="">
@@ -61,14 +85,22 @@
                 </button>
               </td>
               <td>
-                <button onclick="toggleDestaque(<%= im.id %>, this)" class="status <%= im.destaque ? 'status--destaque' : '' %>" style="cursor:pointer;border:none;background:<%= im.destaque ? '' : 'var(--surface-container-high)' %>;" data-destaque="<%= im.destaque %>">
+                <button onclick="toggleDestaque(<%= im.id %>, this)" class="status btn-destaque <%= im.destaque ? 'status--destaque' : '' %>" style="cursor:pointer;border:none;background:<%= im.destaque ? '' : 'var(--surface-container-high)' %>;" data-destaque="<%= im.destaque %>">
                   <%= im.destaque ? '★ Destaque' : '☆ Normal' %>
                 </button>
               </td>
               <td>
-                <div class="action-btns">
-                  <a href="/admin/imoveis/<%= im.id %>/editar" class="action-btn action-btn--edit">Editar</a>
-                  <button onclick="excluirImovel(<%= im.id %>)" class="action-btn action-btn--delete">Excluir</button>
+                <div class="action-btns" style="gap:0.25rem;">
+                  <!-- Editar -->
+                  <a href="/admin/imoveis/<%= im.id %>/editar" class="action-btn action-btn--edit" title="Editar" style="padding:0.35rem 0.5rem;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </a>
+                  <!-- Excluir -->
+                  <button onclick="excluirImovel(<%= im.id %>)" class="action-btn action-btn--delete" title="Excluir" style="padding:0.35rem 0.5rem;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                  <!-- Selecionar -->
+                  <button onclick="toggleSelecionado(<%= im.id %>, this)" class="action-btn" id="sel-<%= im.id %>" style="padding:0.35rem 0.6rem;font-size:var(--label-sm);background:var(--surface-container-high);color:var(--on-surface-variant);border:none;">Selecionar</button>
                 </div>
               </td>
             </tr>
@@ -80,5 +112,121 @@
   </main>
 </div>
 <script src="/js/admin.js"></script>
+<script>
+// ── Seleção em lote ──
+const _selecionados = new Set();
+
+function toggleSelecionado(id, btn) {
+  const row = document.getElementById('row-' + id);
+  if (_selecionados.has(id)) {
+    _selecionados.delete(id);
+    row.style.background = '';
+    btn.textContent = 'Selecionar';
+    btn.style.background = 'var(--surface-container-high)';
+    btn.style.color = 'var(--on-surface-variant)';
+  } else {
+    _selecionados.add(id);
+    row.style.background = 'var(--surface-container-high)';
+    btn.textContent = 'Selecionado';
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+  }
+  atualizarBulkBar();
+}
+
+function selecionarTodos() {
+  document.querySelectorAll('[id^="sel-"]').forEach(btn => {
+    const id = parseInt(btn.id.replace('sel-', ''));
+    if (!_selecionados.has(id)) toggleSelecionado(id, btn);
+  });
+}
+
+function desmarcarTodos() {
+  _selecionados.forEach(id => {
+    const row = document.getElementById('row-' + id);
+    const btn = document.getElementById('sel-' + id);
+    if (row) row.style.background = '';
+    if (btn) { btn.textContent = 'Selecionar'; btn.style.background = 'var(--surface-container-high)'; btn.style.color = 'var(--on-surface-variant)'; }
+  });
+  _selecionados.clear();
+  atualizarBulkBar();
+}
+
+function atualizarBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const count = document.getElementById('bulkCount');
+  if (_selecionados.size > 0) {
+    bar.style.display = 'flex';
+    count.textContent = _selecionados.size === 1
+      ? '1 imóvel selecionado'
+      : `${_selecionados.size} imóveis selecionados`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ── Busca ──
+function toggleBusca() {
+  const wrap = document.getElementById('searchWrap');
+  const input = document.getElementById('searchInput');
+  const aberto = wrap.style.display !== 'none';
+  if (aberto) {
+    wrap.style.display = 'none';
+    input.value = '';
+    filtrarTabela('');
+  } else {
+    wrap.style.display = 'block';
+    input.focus();
+  }
+}
+
+function filtrarTabela(q) {
+  const termo = q.trim().toLowerCase();
+  let visiveis = 0;
+  document.querySelectorAll('tbody tr').forEach(row => {
+    const titulo = row.querySelector('td:nth-child(2) strong');
+    const match = !termo || (titulo && titulo.textContent.toLowerCase().includes(termo));
+    row.style.display = match ? '' : 'none';
+    if (match) visiveis++;
+  });
+  const info = document.getElementById('searchInfo');
+  if (termo) {
+    info.textContent = visiveis === 0
+      ? 'Nenhum imóvel encontrado.'
+      : `${visiveis} imóvel(is) encontrado(s).`;
+  } else {
+    info.textContent = '';
+  }
+}
+
+async function excluirSelecionados() {
+  const ids = Array.from(_selecionados);
+  if (!ids.length) return;
+  const msg = ids.length === 1
+    ? 'Excluir 1 imóvel? Esta ação não pode ser desfeita.'
+    : `Excluir ${ids.length} imóveis? Esta ação não pode ser desfeita.`;
+  if (!confirm(msg)) return;
+  try {
+    const res = await fetch('/admin/imoveis/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    const json = await res.json();
+    if (json.success) {
+      ids.forEach(id => {
+        const row = document.getElementById('row-' + id);
+        if (row) row.remove();
+      });
+      _selecionados.clear();
+      atualizarBulkBar();
+    } else {
+      alert('Erro: ' + (json.error || 'Falha ao excluir.'));
+    }
+  } catch (e) {
+    alert('Erro de rede ao excluir.');
+  }
+}
+</script>
 </body>
 </html>

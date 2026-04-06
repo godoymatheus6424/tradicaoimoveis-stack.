@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 
 function formatarPreco(valor) {
+  if (!valor || Number(valor) === 0) return 'Consulte o Valor';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 }
 

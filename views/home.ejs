@@ -35,60 +35,138 @@
 <section class="destaque-section">
   <div class="container">
     <div class="section__header fade-in">
-      <div class="section__eyebrow">Destaque do Mês</div>
-      <h2 class="section__title">Imóvel em Evidência</h2>
+      <h2 class="section__title--destaque">Imóvel em <em>Destaque</em></h2>
     </div>
-    <div class="destaque-card fade-in">
-      <div class="destaque-card__image">
+
+    <a href="/imovel/<%= destaque.id %>" class="lg-card fade-in" id="lgCard">
+
+      <!-- Imagem de fundo -->
+      <div class="lg-card__bg">
         <% if (destaque.foto_principal) { %>
           <img src="<%= destaque.foto_principal %>" alt="<%= destaque.titulo %>">
         <% } else { %>
-          <div style="width:100%;height:100%;background:var(--surface-container-high);display:flex;align-items:center;justify-content:center;color:var(--outline);">
-            <span style="font-size:4rem;">🏠</span>
-          </div>
+          <div class="lg-card__bg-placeholder">🏠</div>
         <% } %>
       </div>
-      <div class="destaque-card__panel">
-        <div class="badge badge--new" style="margin-bottom:1rem;">Nova Listagem</div>
-        <% if (destaque.categoria_nome) { %>
-          <div style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--on-surface-variant);margin-bottom:0.5rem;"><%= destaque.categoria_nome %></div>
-        <% } %>
-        <h2 style="font-family:var(--font-serif);font-size:1.75rem;font-weight:400;margin-bottom:0.75rem;line-height:1.3;"><%= destaque.titulo %></h2>
-        <p style="font-size:0.875rem;color:var(--on-surface-variant);margin-bottom:1rem;">
-          <% if (destaque.bairro) { %><%= destaque.bairro %>, <% } %><%= destaque.cidade %> — <%= destaque.estado %>
-        </p>
-        <div class="destaque-card__specs">
-          <% if (destaque.quartos > 0) { %>
-          <div class="destaque-card__spec">
-            <div class="destaque-card__spec-value"><%= destaque.quartos %></div>
-            <div class="destaque-card__spec-label">Quartos</div>
+
+      <!-- Overlay escuro gradiente -->
+      <div class="lg-card__overlay"></div>
+
+      <!-- Luz que segue o mouse -->
+      <div class="lg-card__light" id="lgLight"></div>
+
+      <!-- Painel glass -->
+      <div class="lg-card__glass" id="lgGlass">
+        <!-- Reflexo especular do glass -->
+        <div class="lg-card__glass-shine" id="lgShine"></div>
+
+        <div class="lg-card__glass-content">
+          <div class="lg-card__tags">
+            <span class="lg-tag">Destaque</span>
+            <% if (destaque.categoria_nome) { %>
+              <span class="lg-tag lg-tag--muted"><%= destaque.categoria_nome %></span>
+            <% } %>
           </div>
+
+          <h2 class="lg-card__title"><%= destaque.titulo %></h2>
+
+          <% if (destaque.bairro || destaque.cidade) { %>
+          <p class="lg-card__location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            <%= [destaque.bairro, destaque.cidade, destaque.estado].filter(Boolean).join(', ') %>
+          </p>
           <% } %>
-          <% if (destaque.banheiros > 0) { %>
-          <div class="destaque-card__spec">
-            <div class="destaque-card__spec-value"><%= destaque.banheiros %></div>
-            <div class="destaque-card__spec-label">Banheiros</div>
+
+          <div class="lg-card__specs">
+            <% if (destaque.quartos > 0) { %>
+            <div class="lg-spec">
+              <span class="lg-spec__value"><%= destaque.quartos %></span>
+              <span class="lg-spec__label">Quartos</span>
+            </div>
+            <% } %>
+            <% if (destaque.banheiros > 0) { %>
+            <div class="lg-spec">
+              <span class="lg-spec__value"><%= destaque.banheiros %></span>
+              <span class="lg-spec__label">Banheiros</span>
+            </div>
+            <% } %>
+            <% if (destaque.area_total) { %>
+            <div class="lg-spec">
+              <span class="lg-spec__value"><%= Math.round(destaque.area_total) %>m²</span>
+              <span class="lg-spec__label">Área Total</span>
+            </div>
+            <% } %>
+            <% if (destaque.vagas_garagem > 0) { %>
+            <div class="lg-spec">
+              <span class="lg-spec__value"><%= destaque.vagas_garagem %></span>
+              <span class="lg-spec__label">Vagas</span>
+            </div>
+            <% } %>
           </div>
-          <% } %>
-          <% if (destaque.area_total) { %>
-          <div class="destaque-card__spec">
-            <div class="destaque-card__spec-value"><%= Math.round(destaque.area_total) %></div>
-            <div class="destaque-card__spec-label">m² Total</div>
+
+          <div class="lg-card__footer">
+            <div class="lg-card__price"><%= destaque.preco_formatado %></div>
+            <span class="lg-card__cta">Clique para saber mais</span>
           </div>
-          <% } %>
-          <% if (destaque.vagas_garagem > 0) { %>
-          <div class="destaque-card__spec">
-            <div class="destaque-card__spec-value"><%= destaque.vagas_garagem %></div>
-            <div class="destaque-card__spec-label">Vagas</div>
-          </div>
-          <% } %>
         </div>
-        <div class="destaque-card__price"><%= destaque.preco_formatado %></div>
-        <a href="/imovel/<%= destaque.id %>" class="btn btn--primary">Saiba Mais</a>
       </div>
-    </div>
+
+    </a>
   </div>
 </section>
+
+<script>
+(function () {
+  const card  = document.getElementById('lgCard');
+  const light = document.getElementById('lgLight');
+  const shine = document.getElementById('lgShine');
+  if (!card || !light || !shine) return;
+
+  let raf;
+
+  card.addEventListener('mousemove', (e) => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const r  = card.getBoundingClientRect();
+      const x  = e.clientX - r.left;
+      const y  = e.clientY - r.top;
+      const xp = (x / r.width)  * 100;
+      const yp = (y / r.height) * 100;
+
+      // luz principal — segue o mouse em toda a superfície do card
+      light.style.background = `radial-gradient(
+        520px circle at ${x}px ${y}px,
+        rgba(255,255,255,0.13) 0%,
+        rgba(255,255,255,0.04) 35%,
+        transparent 65%
+      )`;
+
+      // reflexo especular no painel glass — varia com posição X do mouse
+      const glassR = document.getElementById('lgGlass').getBoundingClientRect();
+      const gx = e.clientX - glassR.left;
+      const gy = e.clientY - glassR.top;
+      shine.style.background = `radial-gradient(
+        280px circle at ${gx}px ${gy}px,
+        rgba(255,255,255,0.22) 0%,
+        rgba(255,255,255,0.06) 40%,
+        transparent 70%
+      )`;
+
+      // tilt sutil do card
+      const tiltX = ((yp - 50) / 50) * -4;
+      const tiltY = ((xp - 50) / 50) *  4;
+      card.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`;
+    });
+  });
+
+  card.addEventListener('mouseleave', () => {
+    cancelAnimationFrame(raf);
+    light.style.background = 'none';
+    shine.style.background = 'none';
+    card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+  });
+})();
+</script>
 <% } %>
 
 <!-- CURADORIA -->

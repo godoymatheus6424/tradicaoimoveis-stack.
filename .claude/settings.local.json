@@ -5,7 +5,8 @@
       "Bash(npm install:*)",
       "Bash(\"C:\\\\Users\\\\mathe\\\\OneDrive\\\\Desktop\\\\tradição imóveis\\\\public\\\\uploads\\\\imoveis\\\\.gitkeep\")",
       "Bash(psql -U postgres -c \"CREATE DATABASE tradicao_imoveis;\")",
-      "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -c \"CREATE DATABASE tradicao_imoveis;\")"
+      "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -c \"CREATE DATABASE tradicao_imoveis;\")",
+      "Bash(node -e \"console.log\\(require\\('multer/package.json'\\).version\\)\")"
     ]
   }
 }

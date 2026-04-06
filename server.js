@@ -11,10 +11,11 @@ const PgSession = connectPgSimple(session);
 const { Pool } = require('pg');
 const pool = new Pool({
   host: process.env.DB_HOST || '127.0.0.1',
-  port: process.env.DB_PORT || 5433,
+  port: parseInt(process.env.DB_PORT) || 5432,
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || '',
   database: process.env.DB_NAME || 'tradicao_imoveis',
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err, client) => {
@@ -25,11 +26,25 @@ pool.on('error', (err, client) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Security headers
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(methodOverride('_method'));
+app.use(methodOverride(function (req) {
+  // Lê da query string (?_method=PUT) — funciona com multipart/form-data
+  if (req.query && req.query._method) return req.query._method;
+  // Fallback: lê do body quando urlencoded/json
+  if (req.body && req.body._method) return req.body._method;
+}));
 
 // Sessions
 app.use(
@@ -44,6 +59,8 @@ app.use(
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 24h
       secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'strict',
     },
   })
 );

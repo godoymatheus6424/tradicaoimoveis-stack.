@@ -5,79 +5,84 @@
   <div class="container">
     <div class="section__eyebrow">Portfólio</div>
     <h1 class="imoveis-title">Nossos Imóveis</h1>
-    <p style="color:var(--on-surface-variant);margin-top:0.5rem;">Encontre o imóvel perfeito para você e sua família.</p>
+    <p class="imoveis-subtitle">Encontre o imóvel perfeito para você e sua família.</p>
   </div>
 </section>
 
-<section class="imoveis-grid">
+<div class="filters-bar">
   <div class="container">
-    <!-- Filtros -->
-    <div class="filters-bar fade-in">
-      <div class="filters-bar__grid">
-        <div>
-          <label class="input-label">Tipo</label>
-          <select id="filtroTipo" class="input">
-            <option value="">Todos os tipos</option>
-            <option value="casa">Casa</option>
-            <option value="apartamento">Apartamento</option>
-            <option value="terreno">Terreno</option>
-            <option value="comercial">Comercial</option>
-            <option value="rural">Rural</option>
-            <option value="cobertura">Cobertura</option>
-          </select>
-        </div>
-        <div>
-          <label class="input-label">Finalidade</label>
-          <select id="filtroFinalidade" class="input">
-            <option value="">Venda e Aluguel</option>
-            <option value="venda">Venda</option>
-            <option value="aluguel">Aluguel</option>
-          </select>
-        </div>
-        <div>
-          <label class="input-label">Preço Máximo</label>
-          <input type="number" id="filtroPrecoMax" class="input" placeholder="Ex: 800000">
-        </div>
-        <div>
-          <label class="input-label">Quartos (mín.)</label>
-          <select id="filtroQuartos" class="input">
-            <option value="">Qualquer</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-          </select>
-        </div>
-        <div>
-          <label class="input-label">Categoria</label>
-          <select id="filtroCategoria" class="input">
-            <option value="">Todas</option>
-            <% categorias.forEach(function(cat) { %>
-            <option value="<%= cat.id %>"><%= cat.nome %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div style="display:flex;align-items:flex-end;">
-          <button id="btnBuscar" class="btn btn--primary btn--full">Buscar</button>
-        </div>
+    <div class="filters-bar__grid">
+      <div>
+        <label class="input-label">Tipo</label>
+        <select id="filtroTipo" class="input">
+          <option value="">Todos os tipos</option>
+          <option value="Casa">Casa</option>
+          <option value="Apartamento">Apartamento</option>
+          <option value="Terreno">Terreno</option>
+          <option value="Sobrado">Sobrado</option>
+          <option value="Galpão/Barracão">Galpão/Barracão</option>
+          <option value="Sala/Salão">Sala/Salão</option>
+          <option value="Fazenda">Fazenda</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Finalidade</label>
+        <select id="filtroFinalidade" class="input">
+          <option value="">Venda e Aluguel</option>
+          <option value="venda">Venda</option>
+          <option value="locacao">Aluguel</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Preço Máximo</label>
+        <input type="number" id="filtroPrecoMax" class="input" placeholder="Ex: 800000">
+      </div>
+      <div>
+        <label class="input-label">Quartos (mín.)</label>
+        <select id="filtroQuartos" class="input">
+          <option value="">Qualquer</option>
+          <option value="1">1+</option>
+          <option value="2">2+</option>
+          <option value="3">3+</option>
+          <option value="4">4+</option>
+        </select>
+      </div>
+      <div>
+        <label class="input-label">Categoria</label>
+        <select id="filtroCategoria" class="input">
+          <option value="">Todas</option>
+          <% categorias.forEach(function(cat) { %>
+          <option value="<%= cat.id %>"><%= cat.nome %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button id="btnBuscar" class="btn btn--primary btn--full">Buscar</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Resultado -->
+<section class="imoveis-carousel-section">
+  <div class="container">
     <div id="imoveisCount" class="imoveis-count"></div>
-    <div id="imoveisGrid" class="grid-3"></div>
-    <div id="paginacao" class="pagination"></div>
+  </div>
 
-    <!-- Loading -->
-    <div id="loading" style="text-align:center;padding:3rem;display:none;">
-      <div style="font-family:var(--font-serif);font-size:1.25rem;color:var(--on-surface-variant);">Carregando imóveis...</div>
+  <div class="container">
+    <div id="imoveisGrid" class="glass-grid"></div>
+    <div id="paginacao" class="pagination" style="margin-top:var(--space-2xl);"></div>
+
+    <div id="loading" class="carrossel-loading" style="display:none;">
+      <div class="carrossel-loading__spinner"></div>
+      <span>Carregando imóveis...</span>
     </div>
 
-    <!-- Empty -->
-    <div id="emptyState" style="text-align:center;padding:4rem;display:none;">
-      <div style="font-size:3rem;margin-bottom:1rem;">🏠</div>
-      <h3 style="font-family:var(--font-serif);font-size:1.5rem;margin-bottom:0.5rem;">Nenhum imóvel encontrado</h3>
-      <p style="color:var(--on-surface-variant);">Tente ajustar os filtros de busca.</p>
+    <div id="emptyState" class="carrossel-empty" style="display:none;">
+      <div class="carrossel-empty__icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <h3>Nenhum imóvel encontrado</h3>
+      <p>Tente ajustar os filtros de busca.</p>
     </div>
   </div>
 </section>

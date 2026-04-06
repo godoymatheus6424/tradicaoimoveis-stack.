@@ -1,4 +1,25 @@
-<header>
+<header class="site-header">
+  <!-- NAV -->
+  <div class="site-header__nav">
+    <div class="container">
+      <nav class="nav">
+        <a href="/" class="nav__logo">
+          Tradição
+          <span>Imóveis · Maringá</span>
+        </a>
+        <div class="nav__actions">
+          <a href="/contato?visita=1" class="btn btn--primary btn--sm">Agendar Visita</a>
+          <button class="nav__burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- UTILITY BAR (abaixo do nav) -->
   <div class="utility-bar">
     <div class="container">
       <div class="utility-bar__inner">
@@ -11,28 +32,60 @@
       </div>
     </div>
   </div>
-  <div class="site-header">
-    <div class="container">
-      <nav class="nav">
-        <a href="/" class="nav__logo">
-          Tradição
-          <span>Imóveis · Maringá</span>
-        </a>
-        <ul class="nav__links" id="navLinks">
-          <li><a href="/" class="nav__link <%= currentPath === '/' ? 'nav__link--active' : '' %>">Home</a></li>
-          <li><a href="/imoveis" class="nav__link <%= currentPath.startsWith('/imoveis') || currentPath.startsWith('/imovel') ? 'nav__link--active' : '' %>">Nossos Imóveis</a></li>
-          <li><a href="/contato" class="nav__link <%= currentPath === '/contato' ? 'nav__link--active' : '' %>">Fale Conosco</a></li>
-          <li><a href="/sobre" class="nav__link <%= currentPath === '/sobre' ? 'nav__link--active' : '' %>">Sobre</a></li>
-          <li>
-            <a href="/contato?visita=1" class="btn btn--primary btn--sm">Agendar Visita</a>
-          </li>
-        </ul>
-        <button class="nav__hamburger" id="hamburger" aria-label="Menu">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </nav>
+</header>
+
+<!-- Drawer menu lateral -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer__header">
+    <span class="drawer__logo">Tradição <small>Imóveis</small></span>
+    <button class="drawer__close" id="drawerClose" aria-label="Fechar menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <nav class="drawer__nav">
+    <a href="/" class="drawer__link <%= currentPath === '/' ? 'drawer__link--active' : '' %>">Home</a>
+    <a href="/imoveis" class="drawer__link <%= currentPath.startsWith('/imoveis') || currentPath.startsWith('/imovel') ? 'drawer__link--active' : '' %>">Nossos Imóveis</a>
+    <a href="/imoveis?finalidade=venda" class="drawer__link">Comprar</a>
+    <a href="/imoveis?finalidade=locacao" class="drawer__link">Alugar</a>
+    <a href="/sobre" class="drawer__link <%= currentPath === '/sobre' ? 'drawer__link--active' : '' %>">Sobre</a>
+    <a href="/contato" class="drawer__link <%= currentPath === '/contato' ? 'drawer__link--active' : '' %>">Fale Conosco</a>
+  </nav>
+  <div class="drawer__footer">
+    <a href="/contato?visita=1" class="btn btn--primary btn--full">Agendar Visita</a>
+    <div class="drawer__contacts">
+      <span>(44) 3246-7100</span>
+      <span>(44) 99887-0006</span>
     </div>
   </div>
-</header>
+</aside>
+
+<script>
+(function () {
+  const burger  = document.getElementById('navBurger');
+  const drawer  = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const close   = document.getElementById('drawerClose');
+
+  function open() {
+    drawer.classList.add('drawer--open');
+    overlay.classList.add('drawer-overlay--visible');
+    burger.setAttribute('aria-expanded', 'true');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('drawer--open');
+    overlay.classList.remove('drawer-overlay--visible');
+    burger.setAttribute('aria-expanded', 'false');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  burger.addEventListener('click', open);
+  close.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+})();
+</script>

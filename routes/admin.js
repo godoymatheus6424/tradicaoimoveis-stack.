@@ -2,11 +2,119 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+// pdf-parse e mammoth carregados dinamicamente na rota
+
 const db = require('../db');
 const { isAuthenticated } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadToSupabase, deleteFromSupabase } = require('../supabase');
+
+// Multer em memória só para a ficha PDF/DOCX
+const fichaUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+
+function parseImovelTexto(text) {
+  const r = {};
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // Tipo (primeira linha)
+  const tipoMap = {
+    apartamento: 'apartamento', casa: 'casa', terreno: 'terreno',
+    comercial: 'comercial', rural: 'rural', cobertura: 'cobertura',
+    sala: 'comercial', loja: 'comercial', galpão: 'comercial',
+  };
+  const primeiraLinha = lines[0]?.toLowerCase().trim();
+  if (primeiraLinha && tipoMap[primeiraLinha]) r.tipo = tipoMap[primeiraLinha];
+
+  // Nome do empreendimento → título sugerido
+  if (lines[1] && lines[1] !== lines[0]) r.titulo = lines[1];
+
+  // Finalidade
+  r.finalidade = /loca[çc][aã]o|aluguel/i.test(text) ? 'aluguel' : 'venda';
+
+  // Preço: "R$ 2.000,00"
+  const precoM = text.match(/R\$\s*([\d.]+,\d{2})/);
+  if (precoM) r.preco = parseFloat(precoM[1].replace(/\./g, '').replace(',', '.'));
+
+  // Dormitórios → quartos
+  const dormM = text.match(/Dormit[oó]rios?\s*\((\d+)\)/i);
+  if (dormM) r.quartos = parseInt(dormM[1]);
+
+  // Suítes
+  const suiteM = text.match(/(\d+)\s+Su[ií]te/i);
+  if (suiteM) r.suites = parseInt(suiteM[1]);
+
+  // Banheiros
+  const banhM = text.match(/Banheiros?\s*\((\d+)\)/i);
+  if (banhM) r.banheiros = parseInt(banhM[1]);
+
+  // Vagas de garagem
+  const vagasM = text.match(/Garagens?\s*\((\d+)\)/i);
+  if (vagasM) r.vagas_garagem = parseInt(vagasM[1]);
+
+  // Áreas (valor na linha seguinte ao label)
+  function extrairArea(label) {
+    const m = text.match(new RegExp(label + '\\s*[\\r\\n]+([ \\d.,]+)\\s*m[²2]', 'i'));
+    if (!m) return null;
+    return parseFloat(m[1].trim().replace(/\./g, '').replace(',', '.'));
+  }
+  r.area_total     = extrairArea('[AÁ]rea Total') || null;
+  r.area_construida = extrairArea('[AÁ]rea Constru[ií]da') || null;
+
+  // Localização (seção estruturada)
+  const endM   = text.match(/Endere[çc]o:\s*(.+)/i);
+  const bairroM = text.match(/Bairro:\s*(.+)/i);
+  const cidadeM = text.match(/Cidade:\s*(.+)/i);
+
+  if (endM)    r.endereco = endM[1].trim();
+  if (bairroM) r.bairro   = bairroM[1].trim();
+  if (cidadeM) {
+    const cv = cidadeM[1].trim();
+    const ce = cv.match(/^(.+?)\s*[-–]\s*([A-Z]{2})$/);
+    if (ce) { r.cidade = ce[1].trim(); r.estado = ce[2].trim(); }
+    else r.cidade = cv;
+  }
+
+  // Descrição: entre "Descrição" e "Localização"
+  const descM = text.match(/Descri[çc][aã]o\s*[\r\n]+([\s\S]+?)(?:Localiza[çc][aã]o|$)/i);
+  if (descM) r.descricao = descM[1].replace(/\s+/g, ' ').trim();
+
+  return r;
+}
+
+// POST /admin/imoveis/parse-doc
+router.post('/imoveis/parse-doc', isAuthenticated, fichaUpload.single('ficha'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+  try {
+    let text = '';
+    if (req.file.mimetype === 'application/pdf') {
+      const pdfParse = require('pdf-parse');
+      const data = await pdfParse(req.file.buffer);
+      text = data.text;
+    } else {
+      const mammoth = require('mammoth');
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      text = result.value;
+    }
+    res.json({ success: true, data: parseImovelTexto(text) });
+  } catch (err) {
+    console.error('Erro ao parsear documento:', err);
+    res.status(500).json({ success: false, error: 'Não foi possível ler o arquivo.' });
+  }
+});
 
 function formatarPreco(valor) {
+  if (!valor || Number(valor) === 0) return 'Consulte o Valor';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 }
 
@@ -127,11 +235,19 @@ router.post('/imoveis', isAuthenticated, upload.array('fotos', 20), async (req, 
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        await db.raw(
-          `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-           VALUES (?,?,?,?,?)`,
-          [imovelId, file.filename, `/uploads/imoveis/${file.filename}`, i === 0, i]
-        );
+        try {
+          const publicUrl = await uploadToSupabase(file.path, `imoveis/${file.filename}`, file.mimetype) || `/uploads/imoveis/${file.filename}`;
+          await db.raw(
+            `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
+             VALUES (?,?,?,?,?)`,
+            [imovelId, file.filename, publicUrl, i === 0, i]
+          );
+          if (publicUrl !== `/uploads/imoveis/${file.filename}` && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        } catch (e) {
+          console.error("Supabase upload error:", e);
+        }
       }
     }
 
@@ -234,11 +350,19 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
       );
       let ordem = ordemRes.rows[0].max + 1;
       for (const file of req.files) {
-        await db.raw(
-          `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-           VALUES (?,?,?,?,?)`,
-          [id, file.filename, `/uploads/imoveis/${file.filename}`, false, ordem++]
-        );
+        try {
+          const publicUrl = await uploadToSupabase(file.path, `imoveis/${file.filename}`, file.mimetype) || `/uploads/imoveis/${file.filename}`;
+          await db.raw(
+            `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
+             VALUES (?,?,?,?,?)`,
+            [id, file.filename, publicUrl, false, ordem++]
+          );
+          if (publicUrl !== `/uploads/imoveis/${file.filename}` && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        } catch (e) {
+          console.error("Supabase upload error:", e);
+        }
       }
     }
 
@@ -253,13 +377,45 @@ router.put('/imoveis/:id', isAuthenticated, upload.array('fotos', 20), async (re
 router.delete('/imoveis/:id', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const fotosRes = await db.raw('SELECT filename FROM imovel_fotos WHERE imovel_id = ?', [id]);
+    const fotosRes = await db.raw('SELECT filename, path FROM imovel_fotos WHERE imovel_id = ?', [id]);
     for (const foto of fotosRes.rows) {
-      const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (foto.path && foto.path.startsWith('http')) {
+        await deleteFromSupabase(foto.path);
+      } else {
+        const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
     }
     await db.raw('DELETE FROM imoveis WHERE id = ?', [id]);
     res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao excluir.' });
+  }
+});
+
+// POST /admin/imoveis/bulk-delete
+router.post('/imoveis/bulk-delete', isAuthenticated, async (req, res) => {
+  let ids = req.body.ids;
+  if (!ids) return res.status(400).json({ error: 'Nenhum ID informado.' });
+  if (!Array.isArray(ids)) ids = [ids];
+  ids = ids.map(Number).filter(n => Number.isInteger(n) && n > 0);
+  if (!ids.length) return res.status(400).json({ error: 'IDs inválidos.' });
+  try {
+    const fotosRes = await db.raw(
+      `SELECT filename, path FROM imovel_fotos WHERE imovel_id = ANY(?)`,
+      [ids]
+    );
+    for (const foto of fotosRes.rows) {
+      if (foto.path && foto.path.startsWith('http')) {
+        await deleteFromSupabase(foto.path);
+      } else {
+        const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    }
+    await db.raw('DELETE FROM imoveis WHERE id = ANY(?)', [ids]);
+    res.json({ success: true, deleted: ids.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao excluir.' });
@@ -276,11 +432,19 @@ router.post('/imoveis/:id/fotos', isAuthenticated, upload.array('fotos', 20), as
     );
     let ordem = ordemRes.rows[0].max + 1;
     for (const file of req.files) {
-      await db.raw(
-        `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-         VALUES (?,?,?,?,?)`,
-        [id, file.filename, `/uploads/imoveis/${file.filename}`, false, ordem++]
-      );
+      try {
+        const publicUrl = await uploadToSupabase(file.path, `imoveis/${file.filename}`, file.mimetype) || `/uploads/imoveis/${file.filename}`;
+        await db.raw(
+          `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
+           VALUES (?,?,?,?,?)`,
+          [id, file.filename, publicUrl, false, ordem++]
+        );
+        if (publicUrl !== `/uploads/imoveis/${file.filename}` && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      } catch (e) {
+        console.error("Supabase upload error:", e);
+      }
     }
     res.json({ success: true });
   } catch (err) {
@@ -297,8 +461,12 @@ router.delete('/fotos/:id', isAuthenticated, async (req, res) => {
     const foto = fotoRes.rows[0];
     if (!foto) return res.status(404).json({ error: 'Foto não encontrada.' });
 
-    const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (foto.path && foto.path.startsWith('http')) {
+      await deleteFromSupabase(foto.path);
+    } else {
+      const filePath = path.join(__dirname, '../public/uploads/imoveis', foto.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
 
     await db.raw('DELETE FROM imovel_fotos WHERE id = ?', [id]);
     res.json({ success: true });
@@ -325,15 +493,23 @@ router.put('/fotos/:id/principal', isAuthenticated, async (req, res) => {
   }
 });
 
-// PUT /admin/imoveis/:id/destaque
+// PUT /admin/imoveis/:id/destaque  (no máximo 1 destaque por vez)
 router.put('/imoveis/:id/destaque', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await db.raw(
-      'UPDATE imoveis SET destaque = NOT destaque WHERE id = ? RETURNING destaque',
-      [id]
-    );
-    res.json({ success: true, destaque: result.rows[0].destaque });
+    const cur = await db.raw('SELECT destaque FROM imoveis WHERE id = ?', [id]);
+    if (!cur.rows[0]) return res.status(404).json({ error: 'Não encontrado.' });
+    const isDestaque = cur.rows[0].destaque;
+    if (isDestaque) {
+      // já é destaque → remove
+      await db.raw('UPDATE imoveis SET destaque = false WHERE id = ?', [id]);
+      res.json({ success: true, destaque: false });
+    } else {
+      // não é destaque → remove destaque de todos e ativa neste
+      await db.raw('UPDATE imoveis SET destaque = false');
+      await db.raw('UPDATE imoveis SET destaque = true WHERE id = ?', [id]);
+      res.json({ success: true, destaque: true });
+    }
   } catch (err) {
     res.status(500).json({ error: 'Erro.' });
   }
@@ -381,6 +557,203 @@ router.put('/contatos/:id/lido', isAuthenticated, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro.' });
+  }
+});
+
+// ═══════════════════════════════════════════
+//  CONDOMÍNIOS
+// ═══════════════════════════════════════════
+
+const condUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '../public/uploads/condominios')),
+    filename: (req, file, cb) => {
+      const { v4: uuidv4 } = require('uuid');
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${uuidv4()}${ext}`);
+    },
+  }),
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
+  },
+  limits: { fileSize: 10 * 1024 * 1024, files: 20 },
+});
+
+// GET /admin/condominios
+router.get('/condominios', isAuthenticated, async (req, res) => {
+  try {
+    const result = await db.raw(`
+      SELECT c.*,
+        (SELECT path FROM condominio_fotos WHERE condominio_id = c.id AND principal = true LIMIT 1) AS foto_principal
+      FROM condominios c ORDER BY c.created_at DESC
+    `);
+    res.render('admin/condominios-lista', {
+      title: 'Condomínios — Admin',
+      adminNome: req.session.adminNome,
+      condominios: result.rows.map(c => ({ ...c, valor_formatado: formatarPreco(c.valor) })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/admin/dashboard');
+  }
+});
+
+// GET /admin/condominios/novo
+router.get('/condominios/novo', isAuthenticated, (req, res) => {
+  res.render('admin/condominio-form', {
+    title: 'Novo Condomínio — Admin',
+    adminNome: req.session.adminNome,
+    condominio: null,
+    fotos: [],
+    errors: [],
+  });
+});
+
+// POST /admin/condominios
+router.post('/condominios', isAuthenticated, condUpload.array('fotos', 20), async (req, res) => {
+  const { nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep, sob_consulta } = req.body;
+  const errors = [];
+  if (!nome || nome.trim() === '') errors.push('Nome é obrigatório.');
+  if (errors.length) {
+    return res.render('admin/condominio-form', {
+      title: 'Novo Condomínio — Admin',
+      adminNome: req.session.adminNome,
+      condominio: req.body,
+      fotos: [],
+      errors,
+    });
+  }
+  const precoFinal = sob_consulta ? 0 : (parseFloat(valor) || 0);
+  try {
+    const ins = await db.raw(
+      `INSERT INTO condominios (nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      [nome.trim(), precoFinal, descricao || null, caracteristicas || null,
+       endereco || null, bairro || null, cidade || 'Maringá', estado || 'PR', cep || null]
+    );
+    const condId = ins.rows[0].id;
+    if (req.files && req.files.length) {
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        try {
+          const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
+          await db.raw(
+            `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, ?, ?)`,
+            [condId, file.filename, publicUrl, i === 0, i]
+          );
+          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        } catch (e) {
+          console.error("Supabase upload error:", e);
+        }
+      }
+    }
+    res.redirect('/admin/condominios');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/admin/condominios');
+  }
+});
+
+// GET /admin/condominios/:id/editar
+router.get('/condominios/:id/editar', isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [condRes, fotosRes] = await Promise.all([
+      db.raw('SELECT * FROM condominios WHERE id = ?', [id]),
+      db.raw('SELECT * FROM condominio_fotos WHERE condominio_id = ? ORDER BY ordem', [id]),
+    ]);
+    const condominio = condRes.rows[0];
+    if (!condominio) return res.redirect('/admin/condominios');
+    res.render('admin/condominio-form', {
+      title: 'Editar Condomínio — Admin',
+      adminNome: req.session.adminNome,
+      condominio,
+      fotos: fotosRes.rows,
+      errors: [],
+    });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/admin/condominios');
+  }
+});
+
+// PUT /admin/condominios/:id
+router.put('/condominios/:id', isAuthenticated, condUpload.array('fotos', 20), async (req, res) => {
+  const { id } = req.params;
+  const { nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep, sob_consulta } = req.body;
+  const precoFinal = sob_consulta ? 0 : (parseFloat(valor) || 0);
+  try {
+    await db.raw(
+      `UPDATE condominios SET nome=?, valor=?, descricao=?, caracteristicas=?, endereco=?, bairro=?, cidade=?, estado=?, cep=?, updated_at=NOW()
+       WHERE id=?`,
+      [nome.trim(), precoFinal, descricao || null, caracteristicas || null,
+       endereco || null, bairro || null, cidade || 'Maringá', estado || 'PR', cep || null, id]
+    );
+    if (req.files && req.files.length) {
+      const ordemRes = await db.raw('SELECT COALESCE(MAX(ordem),0)+1 AS next FROM condominio_fotos WHERE condominio_id=?', [id]);
+      let ordem = ordemRes.rows[0].next;
+      for (const file of req.files) {
+        try {
+          const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
+          await db.raw(
+            `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, false, ?)`,
+            [id, file.filename, publicUrl, ordem++]
+          );
+          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        } catch (e) {
+          console.error("Supabase upload error:", e);
+        }
+      }
+    }
+    res.redirect('/admin/condominios');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/admin/condominios');
+  }
+});
+
+// DELETE /admin/condominios/:id
+router.delete('/condominios/:id', isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const fotosRes = await db.raw('SELECT filename, path FROM condominio_fotos WHERE condominio_id=?', [id]);
+    for (const foto of fotosRes.rows) {
+      if (foto.path && foto.path.startsWith('http')) {
+        await deleteFromSupabase(foto.path);
+      } else {
+        const fp = path.join(__dirname, '../public/uploads/condominios', foto.filename);
+        if (fs.existsSync(fp)) fs.unlinkSync(fp);
+      }
+    }
+    await db.raw('DELETE FROM condominios WHERE id=?', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir.' });
+  }
+});
+
+// DELETE /admin/condominio-fotos/:id
+router.delete('/condominio-fotos/:id', isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const r = await db.raw('SELECT * FROM condominio_fotos WHERE id=?', [id]);
+    const foto = r.rows[0];
+    if (!foto) return res.status(404).json({ error: 'Não encontrada.' });
+    if (foto.path && foto.path.startsWith('http')) {
+      await deleteFromSupabase(foto.path);
+    } else {
+      const fp = path.join(__dirname, '../public/uploads/condominios', foto.filename);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    }
+    await db.raw('DELETE FROM condominio_fotos WHERE id=?', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir foto.' });
   }
 });
 

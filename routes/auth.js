@@ -1,7 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 const db = require('../db');
+
+// Rate limiter: max 5 login attempts per 15 minutes per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('admin/login', {
+      title: 'Login — Tradição Imóveis',
+      error: 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.',
+    });
+  },
+});
 
 // GET /admin/login
 router.get('/admin/login', (req, res) => {
@@ -10,7 +25,7 @@ router.get('/admin/login', (req, res) => {
 });
 
 // POST /admin/login
-router.post('/admin/login', async (req, res) => {
+router.post('/admin/login', loginLimiter, async (req, res) => {
   const { email, senha } = req.body;
 
   if (!email || !senha) {
@@ -39,9 +54,19 @@ router.post('/admin/login', async (req, res) => {
       });
     }
 
-    req.session.adminId = user.id;
-    req.session.adminNome = user.nome;
-    res.redirect('/admin/dashboard');
+    // Regenerate session to prevent session fixation attacks
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Erro ao regenerar sessão:', err);
+        return res.render('admin/login', {
+          title: 'Login — Tradição Imóveis',
+          error: 'Erro interno. Tente novamente.',
+        });
+      }
+      req.session.adminId = user.id;
+      req.session.adminNome = user.nome;
+      res.redirect('/admin/dashboard');
+    });
   } catch (err) {
     console.error('Erro no login:', err);
     res.render('admin/login', {
