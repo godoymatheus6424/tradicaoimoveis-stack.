@@ -1,28 +1,46 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<!-- HERO -->
-<section class="hero">
+<!-- O Hero vai usar o destaque número 1 (o mais recente) -->
+<% const destaque = destaques.length > 0 ? destaques[0] : null; %>
+
+<!-- HERO (FUSIONADO COM DESTAQUE) -->
+<section class="hero" id="heroSection" style="position:relative; overflow:hidden;">
   <div class="hero__bg-image">
-    <img src="/images/hero-bg.jpg" alt="Imóvel de luxo" onerror="this.style.display='none'">
+    <img src="<%= destaque && destaque.foto_principal ? destaque.foto_principal : '/images/hero-bg.jpg' %>" alt="Imóvel de luxo" onerror="this.style.display='none'">
   </div>
   <div class="hero__bg"></div>
-  <div class="container">
-    <div class="hero__content fade-in">
-      <div class="hero__eyebrow">Tradição Imóveis · Desde 1994</div>
-      <h1 class="hero__title">
-        Encontre onde sua<br>
-        <em>história</em> começa
-      </h1>
-      <div class="hero__bar"></div>
-      <p class="hero__subtitle">Curadoria exclusiva de imóveis em Maringá e região. Mais de três décadas conectando famílias a lares extraordinários.</p>
-      <div class="hero__actions">
-        <a href="/imoveis" class="btn btn--primary">Ver Imóveis</a>
-        <a href="/contato" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Fale Conosco</a>
+  
+  <div class="container" style="position:relative; z-index:10; display:flex; justify-content:center; align-items:center; height:100%;">
+    <div class="hero__content fade-in hero-glass-card" style="transform-style:preserve-3d; position:relative; background:rgba(25, 25, 25, 0.5); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255, 255, 255, 0.1); padding:3rem; border-radius:24px; transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      
+      <!-- Reflexo especular do glass para o mouse -->
+      <div class="hero-shine" style="border-radius:inherit; position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+      
+      <div style="position:relative; z-index:2;">
+        <div class="hero__eyebrow">Tradição Imóveis · Desde 1994</div>
+        <h1 class="hero__title">
+          Encontre onde sua<br>
+          <em>história</em> começa
+        </h1>
+        <div class="hero__bar"></div>
+        <p class="hero__subtitle">Curadoria exclusiva de imóveis em Maringá e região. Mais de três décadas conectando famílias a lares extraordinários.</p>
+        
+        <div class="hero__actions" style="margin-top:2rem;">
+          <% if (destaque) { %>
+            <a href="#carrossel-destaques" class="btn btn--primary">Ver imóveis em destaque</a>
+            <a href="/imoveis" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Todos os Imóveis</a>
+          <% } else { %>
+            <a href="/imoveis" class="btn btn--primary">Ver Imóveis</a>
+            <a href="/contato" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Fale Conosco</a>
+          <% } %>
+        </div>
       </div>
+    
     </div>
   </div>
-  <div class="hero__scroll">
+
+    <div class="hero__scroll">
     <div class="hero__scroll-icon">
       <span></span>
       <span></span>
@@ -30,172 +48,456 @@
   </div>
 </section>
 
-<!-- DESTAQUE -->
-<% if (destaque) { %>
-<section class="destaque-section">
-  <div class="container">
-    <div class="section__header fade-in">
-      <h2 class="section__title--destaque">Imóvel em <em>Destaque</em></h2>
+<!-- SEÇÃO CARROSSEL DE DESTAQUES -->
+<% if (destaques && destaques.length > 0) { %>
+<section class="destaque-section" id="carrossel-destaques">
+
+  <!-- Cabeçalho compacto: título pequeno + linha decorativa + setas -->
+  <div class="destaque-header">
+    <h2 class="destaque-label section__title--destaque">Nossos <em>Destaques</em></h2>
+    <div class="destaque-line"></div>
+    <div class="destaque-nav">
+      <button class="carousel-btn carousel-btn--prev" aria-label="Anterior" onclick="scrollCarousel(-1)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <button class="carousel-btn carousel-btn--next" aria-label="Próximo" onclick="scrollCarousel(1)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+      </button>
     </div>
+  </div>
 
-    <a href="/imovel/<%= destaque.id %>" class="lg-card fade-in" id="lgCard">
+  <!-- Carrossel com margens laterais -->
+  <div style="position: relative; padding: 0 2rem;">
+      <!-- Container com scroll-snap horizontal dinâmico -->
+      <div id="destaquesContainer" class="destaques-carousel fade-in" style="gap:0; border-radius:24px;">
+      
+      <% destaques.forEach((item) => { %>
+        <!-- Wrapper faz o clipping; o <a> recebe o transform 3D livremente -->
+        <div class="carousel-clip">
+          <a href="/imovel/<%= item.id %>" class="lg-card carousel-card">
 
-      <!-- Imagem de fundo -->
-      <div class="lg-card__bg">
-        <% if (destaque.foto_principal) { %>
-          <img src="<%= destaque.foto_principal %>" alt="<%= destaque.titulo %>">
-        <% } else { %>
-          <div class="lg-card__bg-placeholder">🏠</div>
-        <% } %>
+            <!-- Imagem de fundo -->
+            <div class="lg-card__bg">
+              <% if (item.foto_principal) { %>
+                <img src="<%= item.foto_principal %>" alt="<%= item.titulo %>">
+              <% } else { %>
+                <div class="lg-card__bg-placeholder">🏠</div>
+              <% } %>
+            </div>
+
+            <!-- Overlay escuro gradiente -->
+            <div class="lg-card__overlay"></div>
+
+            <!-- Luz que segue o mouse -->
+            <div class="lg-card__light" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+
+            <!-- Painel glass -->
+            <div class="lg-card__glass">
+              <div class="lg-card__glass-shine" style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:inherit; pointer-events:none;"></div>
+              <div class="lg-card__glass-content">
+                <div class="lg-card__tags">
+                  <span class="lg-tag">Destaque</span>
+                  <% if (item.categoria_nome) { %>
+                    <span class="lg-tag lg-tag--muted"><%= item.categoria_nome %></span>
+                  <% } %>
+                </div>
+
+                <h2 class="lg-card__title"><%= item.titulo %></h2>
+
+                <% if (item.bairro || item.cidade) { %>
+                <p class="lg-card__location">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                  <%= [item.bairro, item.cidade, item.estado].filter(Boolean).join(', ') %>
+                </p>
+                <% } %>
+
+                <div class="lg-card__specs">
+                  <% if (item.quartos > 0) { %>
+                  <div class="lg-spec">
+                    <span class="lg-spec__value"><%= item.quartos %></span>
+                    <span class="lg-spec__label">Quartos</span>
+                  </div>
+                  <% } %>
+                  <% if (item.banheiros > 0) { %>
+                  <div class="lg-spec">
+                    <span class="lg-spec__value"><%= item.banheiros %></span>
+                    <span class="lg-spec__label">Banheiros</span>
+                  </div>
+                  <% } %>
+                  <% if (item.area_total) { %>
+                  <div class="lg-spec">
+                    <span class="lg-spec__value"><%= Math.round(item.area_total) %>m²</span>
+                    <span class="lg-spec__label">Área Total</span>
+                  </div>
+                  <% } %>
+                  <% if (item.vagas_garagem > 0) { %>
+                  <div class="lg-spec">
+                    <span class="lg-spec__value"><%= item.vagas_garagem %></span>
+                    <span class="lg-spec__label">Vagas</span>
+                  </div>
+                  <% } %>
+                </div>
+
+                <div class="lg-card__footer">
+                  <div class="lg-card__price"><%= item.preco_formatado %></div>
+                  <span class="lg-card__cta">Clique para saber mais</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div><!-- /carousel-clip -->
+      <% }) %>
+
       </div>
-
-      <!-- Overlay escuro gradiente -->
-      <div class="lg-card__overlay"></div>
-
-      <!-- Luz que segue o mouse -->
-      <div class="lg-card__light" id="lgLight"></div>
-
-      <!-- Painel glass -->
-      <div class="lg-card__glass" id="lgGlass">
-        <!-- Reflexo especular do glass -->
-        <div class="lg-card__glass-shine" id="lgShine"></div>
-
-        <div class="lg-card__glass-content">
-          <div class="lg-card__tags">
-            <span class="lg-tag">Destaque</span>
-            <% if (destaque.categoria_nome) { %>
-              <span class="lg-tag lg-tag--muted"><%= destaque.categoria_nome %></span>
-            <% } %>
-          </div>
-
-          <h2 class="lg-card__title"><%= destaque.titulo %></h2>
-
-          <% if (destaque.bairro || destaque.cidade) { %>
-          <p class="lg-card__location">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <%= [destaque.bairro, destaque.cidade, destaque.estado].filter(Boolean).join(', ') %>
-          </p>
-          <% } %>
-
-          <div class="lg-card__specs">
-            <% if (destaque.quartos > 0) { %>
-            <div class="lg-spec">
-              <span class="lg-spec__value"><%= destaque.quartos %></span>
-              <span class="lg-spec__label">Quartos</span>
-            </div>
-            <% } %>
-            <% if (destaque.banheiros > 0) { %>
-            <div class="lg-spec">
-              <span class="lg-spec__value"><%= destaque.banheiros %></span>
-              <span class="lg-spec__label">Banheiros</span>
-            </div>
-            <% } %>
-            <% if (destaque.area_total) { %>
-            <div class="lg-spec">
-              <span class="lg-spec__value"><%= Math.round(destaque.area_total) %>m²</span>
-              <span class="lg-spec__label">Área Total</span>
-            </div>
-            <% } %>
-            <% if (destaque.vagas_garagem > 0) { %>
-            <div class="lg-spec">
-              <span class="lg-spec__value"><%= destaque.vagas_garagem %></span>
-              <span class="lg-spec__label">Vagas</span>
-            </div>
-            <% } %>
-          </div>
-
-          <div class="lg-card__footer">
-            <div class="lg-card__price"><%= destaque.preco_formatado %></div>
-            <span class="lg-card__cta">Clique para saber mais</span>
-          </div>
-        </div>
-      </div>
-
-    </a>
   </div>
 </section>
+<% } %>
+
+<style>
+/* Esconder scrollbar nativa para design mais limpo no carousel */
+.destaques-carousel::-webkit-scrollbar {
+  display: none;
+}
+.destaques-carousel {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.lg-card__glass {
+  overflow: hidden;
+  border-radius: 24px;
+  transform: translateZ(0);
+}
+.lg-card__glass-shine {
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Cabeçalho compacto da seção destaque */
+.destaque-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem 1rem;
+}
+.destaque-label {
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem) !important;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  gap: 0.3em !important;
+}
+/* remove as linhas decorativas que o section__title--destaque adiciona via ::before/::after */
+.destaque-label::before,
+.destaque-label::after {
+  display: none !important;
+}
+@media (max-width: 640px) {
+  .destaque-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  .destaque-line { display: none; }
+}
+.destaque-line {
+  flex: 1;
+  height: 1px;
+  margin: 0 1rem;
+  background: linear-gradient(to right, rgba(105,0,8,0.35) 0%, var(--outline-variant) 35%, transparent 100%);
+}
+.destaque-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Wrapper de clipping — sem transform, então overflow:hidden funciona corretamente */
+.carousel-clip {
+  scroll-snap-align: center;
+  flex: 0 0 100%;
+  min-width: 100%;
+  overflow: hidden;
+  height: clamp(480px, 70vh, 680px);
+}
+/* O <a> ocupa todo o espaço do wrapper e recebe o transform 3D */
+.carousel-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Setas no cabeçalho (não mais absolutas) */
+.carousel-btn {
+  position: static;
+  transform: none;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.carousel-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .destaque-nav { display: none; }
+}
+.carousel-btn svg { width: 22px; height: 22px; }
+
+/* Hover Effect para o botão secundário Todos os Imóveis */
+.hero__actions .btn--secondary {
+  transition: all 0.3s ease;
+}
+.hero__actions .btn--secondary:hover {
+  background-color: #f5f0e8 !important;
+  color: #191919 !important;
+  border-color: #f5f0e8 !important;
+}
+
+/* Mobile: hero glass card com padding menor */
+@media (max-width: 640px) {
+  .hero-glass-card {
+    padding: 1.75rem !important;
+    margin: 0 !important;
+    border-radius: 16px !important;
+  }
+  .hero__title {
+    font-size: clamp(2rem, 9vw, 3rem) !important;
+  }
+  .hero__subtitle {
+    font-size: 0.9375rem;
+  }
+  /* Carrossel destaque ocupa mais do ecrã */
+  .destaque-section > div[style] {
+    padding: 0 0.75rem !important;
+  }
+  .carousel-clip {
+    height: clamp(340px, 60vh, 480px) !important;
+  }
+  /* Tipo carrosseis: nav some, cards mais largos */
+  .tipo-carousel-wrap { gap: 0; }
+}
+</style>
+
+
 
 <script>
 (function () {
-  const card  = document.getElementById('lgCard');
-  const light = document.getElementById('lgLight');
-  const shine = document.getElementById('lgShine');
-  if (!card || !light || !shine) return;
+  // 1. HERO TILT SCRIPT
+  const heroSection = document.getElementById('heroSection');
+  const heroCard = document.querySelector('.hero-glass-card');
+  const heroShine = document.querySelector('.hero-shine');
+  
+  if (heroSection && heroCard && heroShine) {
+    let heroRaf;
+    heroSection.addEventListener('mousemove', (e) => {
+      cancelAnimationFrame(heroRaf);
+      heroRaf = requestAnimationFrame(() => {
+        const sectionRect = heroSection.getBoundingClientRect();
+        const heroX = e.clientX - sectionRect.left;
+        const heroY = e.clientY - sectionRect.top;
+        const xp = (heroX / sectionRect.width) * 100;
+        const yp = (heroY / sectionRect.height) * 100;
 
-  let raf;
+        const tiltX = ((yp - 50) / 50) * -3; 
+        const tiltY = ((xp - 50) / 50) *  3;
+        heroCard.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
 
-  card.addEventListener('mousemove', (e) => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const r  = card.getBoundingClientRect();
-      const x  = e.clientX - r.left;
-      const y  = e.clientY - r.top;
-      const xp = (x / r.width)  * 100;
-      const yp = (y / r.height) * 100;
-
-      // luz principal — segue o mouse em toda a superfície do card
-      light.style.background = `radial-gradient(
-        520px circle at ${x}px ${y}px,
-        rgba(255,255,255,0.13) 0%,
-        rgba(255,255,255,0.04) 35%,
-        transparent 65%
-      )`;
-
-      // reflexo especular no painel glass — varia com posição X do mouse
-      const glassR = document.getElementById('lgGlass').getBoundingClientRect();
-      const gx = e.clientX - glassR.left;
-      const gy = e.clientY - glassR.top;
-      shine.style.background = `radial-gradient(
-        280px circle at ${gx}px ${gy}px,
-        rgba(255,255,255,0.22) 0%,
-        rgba(255,255,255,0.06) 40%,
-        transparent 70%
-      )`;
-
-      // tilt sutil do card
-      const tiltX = ((yp - 50) / 50) * -4;
-      const tiltY = ((xp - 50) / 50) *  4;
-      card.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`;
+        const glassR = heroCard.getBoundingClientRect();
+        const gx = e.clientX - glassR.left;
+        const gy = e.clientY - glassR.top;
+        
+        heroShine.style.background = `radial-gradient(
+          400px circle at ${gx}px ${gy}px,
+          rgba(255,255,255,0.15) 0%,
+          rgba(255,255,255,0.02) 40%,
+          transparent 70%
+        )`;
+      });
     });
-  });
 
-  card.addEventListener('mouseleave', () => {
-    cancelAnimationFrame(raf);
-    light.style.background = 'none';
-    shine.style.background = 'none';
-    card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+    heroSection.addEventListener('mouseleave', () => {
+      cancelAnimationFrame(heroRaf);
+      heroShine.style.background = 'none';
+      heroCard.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+    });
+  }
+
+  // 2. CAROUSEL CARDS — tilt 3D no <a> filho; clipping no wrapper .carousel-clip (sem transform)
+  document.querySelectorAll('.carousel-clip').forEach(clip => {
+    const card  = clip.querySelector('.carousel-card');
+    const light = card.querySelector('.lg-card__light');
+    const glass = card.querySelector('.lg-card__glass');
+    const shine = card.querySelector('.lg-card__glass-shine');
+    if (!card || !light || !glass || !shine) return;
+
+    let raf;
+    clip.addEventListener('mousemove', (e) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r  = clip.getBoundingClientRect();
+        const x  = e.clientX - r.left;
+        const y  = e.clientY - r.top;
+        const xp = (x / r.width)  * 100;
+        const yp = (y / r.height) * 100;
+
+        light.style.background = `radial-gradient(
+          520px circle at ${x}px ${y}px,
+          rgba(255,255,255,0.13) 0%,
+          rgba(255,255,255,0.04) 35%,
+          transparent 65%
+        )`;
+
+        const glassR = glass.getBoundingClientRect();
+        const gx = e.clientX - glassR.left;
+        const gy = e.clientY - glassR.top;
+        shine.style.background = `radial-gradient(
+          280px circle at ${gx}px ${gy}px,
+          rgba(255,255,255,0.22) 0%,
+          rgba(255,255,255,0.06) 40%,
+          transparent 70%
+        )`;
+
+        const tiltX = ((yp - 50) / 50) * -4;
+        const tiltY = ((xp - 50) / 50) *  4;
+        card.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`;
+        card.style.transition = 'transform 0.08s linear';
+      });
+    });
+
+    clip.addEventListener('mouseleave', () => {
+      cancelAnimationFrame(raf);
+      light.style.background = 'none';
+      shine.style.background = 'none';
+      card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+      card.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
+    });
   });
 })();
 </script>
-<% } %>
 
-<!-- CURADORIA -->
-<% if (categorias && categorias.length > 0) { %>
-<section class="curadoria-section">
+<!-- CARROSSEIS DE IMÓVEIS POR TIPO -->
+<section class="tipos-section">
   <div class="container">
-    <div class="section__header fade-in">
-      <div class="section__eyebrow">Nossas Especialidades</div>
-      <h2 class="section__title">Nossa Curadoria</h2>
-      <p class="section__subtitle">Selecionamos as melhores oportunidades em cada segmento para você.</p>
-    </div>
-    <div class="bento-grid fade-in">
-      <% categorias.forEach(function(cat) { %>
-      <a href="/imoveis?categoria_id=<%= cat.id %>" class="bento-item">
-        <% if (cat.imagem_url) { %>
-          <img src="<%= cat.imagem_url %>" alt="<%= cat.nome %>" onerror="this.parentElement.style.background='var(--surface-container-highest)'">
-        <% } else { %>
-          <div style="width:100%;height:100%;background:var(--surface-container-highest);"></div>
-        <% } %>
-        <div class="bento-item__overlay">
-          <div class="bento-item__badge"><%= cat.subtitulo || '' %></div>
-          <div class="bento-item__title"><%= cat.nome %></div>
+
+    <%
+      const tiposCarrossel = [
+        { label: 'Apartamentos', em: 'Apartamentos', lista: apartamentos, tipo: 'apartamento', link: '/imoveis?tipo=Apartamento', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 15h18"/></svg>' },
+        { label: 'Casas', em: 'Casas', lista: casas, tipo: 'casa', link: '/imoveis?tipo=Casa', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20h20"/><path d="M6 20V8l6-6 6 6v12"/><path d="M10 20v-6h4v6"/></svg>' },
+        { label: 'Comerciais', em: 'Comerciais', lista: comerciais, tipo: 'comercial', link: '/imoveis?tipo=Comercial', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="15" rx="1"/><path d="M16 7V5a2 2 0 00-4 0v2"/><path d="M8 7V5a2 2 0 00-4 0v2"/><path d="M12 12v5"/><path d="M8 12v5"/><path d="M16 12v5"/></svg>' },
+      ];
+    %>
+
+    <% tiposCarrossel.forEach(function(grupo, gi) { %>
+    <% if (grupo.lista && grupo.lista.length > 0) { %>
+    <div class="tipo-bloco fade-in">
+
+      <!-- Cabeçalho da seção -->
+      <div class="tipo-header">
+        <div class="tipo-header__left">
+          <span class="tipo-header__icon" style="color:var(--primary);"><%- grupo.icone %></span>
+          <h2 class="tipo-header__title"><em><%= grupo.em %></em></h2>
         </div>
-      </a>
-      <% }) %>
+        <a href="<%= grupo.link %>" class="tipo-header__link">
+          Ver todos
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <!-- Carrossel -->
+      <div class="tipo-carousel-wrap">
+        <button class="tipo-nav tipo-nav--prev" aria-label="Anterior" onclick="scrollTipo('<%= grupo.tipo %>', -1)">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="tipo-carousel" id="carousel-<%= grupo.tipo %>">
+          <% grupo.lista.forEach(function(item) { %>
+          <a href="/imovel/<%= item.id %>" class="mini-card">
+
+            <!-- Foto -->
+            <div class="mini-card__photo">
+              <% if (item.foto_principal) { %>
+                <img src="<%= item.foto_principal %>" alt="<%= item.titulo %>" loading="lazy">
+              <% } else { %>
+                <div class="mini-card__no-photo">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--outline)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                </div>
+              <% } %>
+              <% if (item.destaque) { %>
+                <span class="mini-card__badge">Destaque</span>
+              <% } else if (item.novo) { %>
+                <span class="mini-card__badge mini-card__badge--novo">Novo</span>
+              <% } %>
+            </div>
+
+            <!-- Info -->
+            <div class="mini-card__info">
+              <% if (item.bairro || item.cidade) { %>
+              <p class="mini-card__location">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                <%= [item.bairro, item.cidade].filter(Boolean).join(', ') %>
+              </p>
+              <% } %>
+              <h3 class="mini-card__title"><%= item.titulo %></h3>
+
+              <div class="mini-card__specs">
+                <% if (item.quartos > 0) { %>
+                <span class="mini-spec">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M3 20V8a2 2 0 012-2h14a2 2 0 012 2v12"/><path d="M3 14h18"/><path d="M7 14v6"/><path d="M17 14v6"/></svg>
+                  <strong><%= item.quartos %></strong>
+                </span>
+                <% } %>
+                <% if (item.banheiros > 0) { %>
+                <span class="mini-spec">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><path d="M4 12h16"/><path d="M4 12V6a2 2 0 012-2h4a2 2 0 012 2v6"/><rect x="2" y="12" width="20" height="4" rx="1"/><path d="M6 20v-4"/><path d="M18 20v-4"/></svg>
+                  <strong><%= item.banheiros %></strong>
+                </span>
+                <% } %>
+                <% if (item.area_total) { %>
+                <span class="mini-spec">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+                  <strong><%= Math.round(item.area_total) %>m²</strong>
+                </span>
+                <% } %>
+                <% if (item.vagas_garagem > 0) { %>
+                <span class="mini-spec">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/></svg>
+                  <strong><%= item.vagas_garagem %></strong>
+                </span>
+                <% } %>
+              </div>
+
+              <div class="mini-card__footer">
+                <span class="mini-card__price"><%= item.preco_formatado %></span>
+                <span class="mini-card__arrow">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                </span>
+              </div>
+            </div>
+
+          </a>
+          <% }) %>
+        </div>
+        <button class="tipo-nav tipo-nav--next" aria-label="Próximo" onclick="scrollTipo('<%= grupo.tipo %>', 1)">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
     </div>
+    <% } %>
+    <% }) %>
+
   </div>
 </section>
-<% } %>
 
 <!-- CTA BAND -->
 <section style="background:linear-gradient(135deg,var(--primary),var(--primary-container));padding:var(--space-4xl) 0;">
@@ -216,6 +518,24 @@
 
 <%- include('partials/footer') %>
 
+<script>
+function scrollCarousel(dir) {
+  const container = document.getElementById('destaquesContainer');
+  if (container) {
+    const cardWidth = container.offsetWidth;
+    container.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
+  }
+}
+
+function scrollTipo(tipo, dir) {
+  const container = document.getElementById('carousel-' + tipo);
+  if (container) {
+    const card = container.querySelector('.mini-card');
+    const cardW = card ? (card.offsetWidth + 20) : 320;
+    container.scrollBy({ left: dir * cardW * 2, behavior: 'smooth' });
+  }
+}
+</script>
 <script src="/js/main.js"></script>
 </body>
 </html>

@@ -39,3 +39,68 @@
     </div>
   </div>
 </footer>
+
+<!-- Botão flutuante WhatsApp -->
+<a
+  href="https://wa.me/5544998870006?text=Ol%C3%A1!%20Tenho%20interesse%20em%20um%20im%C3%B3vel.%20Pode%20me%20atender%3F"
+  target="_blank"
+  rel="noopener"
+  class="whatsapp-fab"
+  aria-label="Fale pelo WhatsApp"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28" fill="#fff">
+    <path d="M16 1C7.716 1 1 7.716 1 16c0 2.628.672 5.1 1.852 7.256L1 31l7.97-1.832A14.94 14.94 0 0016 31c8.284 0 15-6.716 15-15S24.284 1 16 1zm0 27.2a12.16 12.16 0 01-6.2-1.696l-.444-.264-4.732 1.088 1.116-4.612-.29-.472A12.2 12.2 0 013.8 16C3.8 9.26 9.26 3.8 16 3.8S28.2 9.26 28.2 16 22.74 28.2 16 28.2zm6.692-9.116c-.368-.184-2.176-1.072-2.512-1.196-.336-.12-.58-.184-.824.184-.244.368-.944 1.196-1.156 1.44-.212.248-.424.276-.792.092-.368-.184-1.556-.572-2.964-1.824-1.096-.976-1.836-2.18-2.052-2.548-.216-.368-.024-.568.16-.752.164-.164.368-.428.552-.64.184-.216.244-.368.368-.612.12-.244.06-.46-.032-.644-.092-.184-.824-1.988-1.128-2.724-.296-.712-.6-.616-.824-.628-.212-.008-.456-.012-.7-.012-.244 0-.644.092-.98.46-.336.368-1.284 1.256-1.284 3.064 0 1.808 1.316 3.552 1.5 3.796.184.244 2.588 3.952 6.272 5.54.876.38 1.56.604 2.092.772.88.28 1.68.24 2.312.144.704-.104 2.176-.888 2.484-1.748.308-.86.308-1.596.216-1.748-.092-.152-.336-.244-.7-.428z"/>
+  </svg>
+  <span class="whatsapp-fab__tooltip">Fale conosco</span>
+</a>
+
+<style>
+.whatsapp-fab {
+  position: fixed;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  z-index: 999;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #25d366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+  text-decoration: none;
+}
+.whatsapp-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.6);
+}
+.whatsapp-fab__tooltip {
+  position: absolute;
+  right: calc(100% + 10px);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.whatsapp-fab__tooltip::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-left-color: #1a1a1a;
+}
+.whatsapp-fab:hover .whatsapp-fab__tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+</style>

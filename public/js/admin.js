@@ -78,18 +78,19 @@ async function toggleDestaque(id, btn) {
   try {
     const res = await fetch(`/admin/imoveis/${id}/destaque`, { method: 'PUT' });
     const json = await res.json();
+    
     if (json.success) {
-      // Reseta todos os botões de destaque da tabela
-      document.querySelectorAll('.btn-destaque').forEach(b => {
-        b.textContent = '☆ Normal';
-        b.className = 'status btn-destaque';
-        b.style.background = 'var(--surface-container-high)';
-      });
       if (json.destaque) {
         btn.textContent = '★ Destaque';
         btn.className = 'status status--destaque btn-destaque';
         btn.style.background = '';
+      } else {
+        btn.textContent = '☆ Normal';
+        btn.className = 'status btn-destaque';
+        btn.style.background = 'var(--surface-container-high)';
       }
+    } else if (json.error) {
+      alert(json.error);
     }
   } catch (err) {
     alert('Erro ao alterar destaque.');

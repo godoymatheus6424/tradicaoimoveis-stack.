@@ -168,6 +168,14 @@
               <label class="input-label">CEP</label>
               <input type="text" name="cep" class="input" value="<%= imovel ? imovel.cep || '' : '' %>" placeholder="00000-000">
             </div>
+            <div>
+              <label class="input-label">Andar</label>
+              <input type="text" name="andar" class="input" value="<%= imovel ? imovel.andar || '' : '' %>" placeholder="Ex: 14">
+            </div>
+            <div>
+              <label class="input-label">Apto / Lote / Sala</label>
+              <input type="text" name="apto" class="input" value="<%= imovel ? imovel.apto || '' : '' %>" placeholder="Ex: 1403">
+            </div>
           </div>
 
           <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1.5rem;padding:1rem 0;border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">Configurações</h3>
@@ -273,7 +281,9 @@ function preencherCampos(d) {
   set('banheiros', d.banheiros); set('vagas_garagem', d.vagas_garagem);
   set('area_total', d.area_total); set('area_construida', d.area_construida);
   set('endereco', d.endereco); set('bairro', d.bairro);
-  set('cidade', d.cidade); set('estado', d.estado); set('descricao', d.descricao);
+  set('cidade', d.cidade); set('estado', d.estado);
+  set('andar', d.andar); set('apto', d.apto);
+  set('descricao', d.descricao);
 }
 
 // Chama API de parse e retorna os dados extraídos

@@ -56,23 +56,23 @@
 }
 
 .nav__logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.375rem;
-  color: var(--on-surface);
-  line-height: 1;
   flex-shrink: 0;
-  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
 }
 
-.nav__logo span {
+.nav__logo-img {
+  height: 38px;
+  width: auto;
   display: block;
-  font-size: var(--label-sm);
-  font-family: var(--font-sans);
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  color: var(--on-surface-variant);
-  margin-top: 3px;
+  object-fit: contain;
+}
+
+.drawer__logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .nav__actions {
@@ -512,4 +512,29 @@
   .bento-item { height: 200px; }
   .utility-bar__contacts { display: none; }
   .container { padding: 0 var(--space-lg); }
+}
+
+@media (max-width: 640px) {
+  /* Esconde utility bar inteira em telas muito pequenas */
+  .utility-bar { display: none; }
+
+  /* Container mais estreito */
+  .container { padding: 0 var(--space-md); }
+
+  /* Logo menor no nav para não competir com o botão */
+  .nav__logo-img { height: 28px; }
+
+  /* Botão "Agendar Visita" some no mobile pequeno, fica só o burger */
+  .nav__actions .btn { display: none; }
+
+  /* Título destaque pode quebrar linha no mobile */
+  .section__title--destaque {
+    white-space: normal;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    gap: 0.25em !important;
+  }
+
+  /* Footer simplificado */
+  .footer__grid { gap: var(--space-xl); }
+  .footer { padding: var(--space-2xl) 0 var(--space-lg); }
 }

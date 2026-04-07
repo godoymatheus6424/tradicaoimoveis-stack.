@@ -242,7 +242,7 @@ textarea.input {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  height: clamp(380px, 52vh, 520px);
+  height: clamp(480px, 70vh, 680px);
   text-decoration: none;
   color: inherit;
   cursor: pointer;

@@ -10,29 +10,59 @@ function formatarPreco(valor) {
 // GET /
 router.get('/', async (req, res) => {
   try {
+    const fotoSql = `(SELECT path FROM imovel_fotos WHERE imovel_id = i.id AND principal = true LIMIT 1)`;
+
     const destaqueRes = await db.raw(
-      `SELECT i.*, c.nome AS categoria_nome,
-        (SELECT path FROM imovel_fotos WHERE imovel_id = i.id AND principal = true LIMIT 1) AS foto_principal
+      `SELECT i.*, c.nome AS categoria_nome, ${fotoSql} AS foto_principal
        FROM imoveis i
        LEFT JOIN categorias c ON c.id = i.categoria_id
        WHERE i.destaque = true AND i.ativo = true
-       ORDER BY i.created_at DESC LIMIT 1`
+       ORDER BY i.updated_at DESC LIMIT 3`
     );
-    const destaque = destaqueRes.rows[0] || null;
-    if (destaque) destaque.preco_formatado = formatarPreco(destaque.preco);
+    const destaques = destaqueRes.rows || [];
+    destaques.forEach(d => d.preco_formatado = formatarPreco(d.preco));
 
-    const categoriasRes = await db.raw(
-      'SELECT * FROM categorias WHERE ativo = true ORDER BY ordem ASC'
+    const aptRes = await db.raw(
+      `SELECT i.*, ${fotoSql} AS foto_principal
+       FROM imoveis i
+       WHERE i.ativo = true AND LOWER(i.tipo) LIKE '%apartamento%'
+       ORDER BY i.updated_at DESC LIMIT 8`
     );
+    const apartamentos = aptRes.rows || [];
+    apartamentos.forEach(d => d.preco_formatado = formatarPreco(d.preco));
+
+    const casasRes = await db.raw(
+      `SELECT i.*, ${fotoSql} AS foto_principal
+       FROM imoveis i
+       WHERE i.ativo = true AND (LOWER(i.tipo) LIKE '%casa%' OR LOWER(i.tipo) LIKE '%sobrado%')
+       ORDER BY i.updated_at DESC LIMIT 8`
+    );
+    const casas = casasRes.rows || [];
+    casas.forEach(d => d.preco_formatado = formatarPreco(d.preco));
+
+    const comRes = await db.raw(
+      `SELECT i.*, ${fotoSql} AS foto_principal
+       FROM imoveis i
+       WHERE i.ativo = true AND (
+         LOWER(i.tipo) LIKE '%comercial%' OR LOWER(i.tipo) LIKE '%sala%' OR
+         LOWER(i.tipo) LIKE '%galpão%' OR LOWER(i.tipo) LIKE '%loja%' OR
+         LOWER(i.tipo) LIKE '%barrac%' OR LOWER(i.tipo) LIKE '%galp%'
+       )
+       ORDER BY i.updated_at DESC LIMIT 8`
+    );
+    const comerciais = comRes.rows || [];
+    comerciais.forEach(d => d.preco_formatado = formatarPreco(d.preco));
 
     res.render('home', {
       title: 'Tradição Imóveis — Maringá',
-      destaque,
-      categorias: categoriasRes.rows,
+      destaques,
+      apartamentos,
+      casas,
+      comerciais,
     });
   } catch (err) {
     console.error(err);
-    res.render('home', { title: 'Tradição Imóveis — Maringá', destaque: null, categorias: [] });
+    res.render('home', { title: 'Tradição Imóveis — Maringá', destaques: [], apartamentos: [], casas: [], comerciais: [] });
   }
 });
 
