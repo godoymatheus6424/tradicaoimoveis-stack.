@@ -535,48 +535,13 @@
     gap: 0.25em !important;
   }
 
-  /* Nossos Imóveis - redesign elegante no mobile */
+  /* Nossos Imóveis - ajuste mobile */
   .imoveis-header {
-    background: linear-gradient(
-      180deg,
-      var(--surface) 0%,
-      var(--surface-container-low) 100%
-    ) !important;
-    border-bottom: none !important;
-    padding: 2.5rem 0 2rem !important;
-    text-align: center;
-  }
-  .imoveis-header .section__eyebrow {
-    color: var(--primary) !important;
-    font-size: 0.65rem !important;
-    letter-spacing: 0.15em !important;
-    margin-bottom: 0.75rem;
-  }
-  .imoveis-title {
-    color: var(--on-surface) !important;
-    font-size: clamp(1.75rem, 6vw, 2.25rem) !important;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
+    padding: 2rem 0 1.5rem !important;
   }
   .imoveis-title::before,
   .imoveis-title::after {
-    content: '';
     width: 32px;
-    height: 1px;
-    background: linear-gradient(to var(--dir, right), transparent, var(--primary));
-    flex-shrink: 0;
-  }
-  .imoveis-title::before { --dir: right; }
-  .imoveis-title::after  { --dir: left; }
-  .imoveis-subtitle {
-    color: var(--on-surface-variant) !important;
-    font-size: 0.85rem !important;
-    margin-top: 0.625rem;
-    opacity: 0.7;
   }
 
   /* Footer simplificado */
