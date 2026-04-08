@@ -17,10 +17,24 @@ router.get('/', async (req, res) => {
        FROM imoveis i
        LEFT JOIN categorias c ON c.id = i.categoria_id
        WHERE i.destaque = true AND i.ativo = true
-       ORDER BY i.updated_at DESC LIMIT 3`
+       ORDER BY COALESCE(i.ordem_destaque, 999) ASC, i.updated_at DESC LIMIT 3`
     );
     const destaques = destaqueRes.rows || [];
-    destaques.forEach(d => d.preco_formatado = formatarPreco(d.preco));
+    
+    if (destaques.length > 0) {
+      const destaqueIds = destaques.map(d => d.id);
+      const fotosRes = await db.raw(
+        `SELECT imovel_id, path FROM imovel_fotos WHERE imovel_id = ANY(?) ORDER BY principal DESC, ordem ASC`,
+        [destaqueIds]
+      );
+      destaques.forEach(d => {
+        d.fotos = fotosRes.rows.filter(f => f.imovel_id === d.id).map(f => f.path);
+        // Fallback case has no photos natively
+        if (d.fotos.length === 0 && d.foto_principal) d.fotos = [d.foto_principal];
+        else if (d.fotos.length === 0) d.fotos = ['/images/hero-bg.jpg'];
+        d.preco_formatado = formatarPreco(d.preco);
+      });
+    }
 
     const aptRes = await db.raw(
       `SELECT i.*, ${fotoSql} AS foto_principal

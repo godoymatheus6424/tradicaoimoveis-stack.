@@ -38,12 +38,38 @@ function parseImovelTexto(text) {
   if (vagasM) r.vagas_garagem = parseInt(vagasM[1]);
 
   function extrairArea(label) {
-    const m = text.match(new RegExp(label + '\\s*[\\r\\n]+([ \\d.,]+)\\s*m[²2]', 'i'));
-    if (!m) return null;
-    return parseFloat(m[1].trim().replace(/\./g, '').replace(',', '.'));
+    // Tenta m2 primeiro
+    let m = text.match(new RegExp(label + '\\s*[\\r\\n]+([\\s\\d.,]+)\\s*m[²2]', 'i'));
+    let unit = 'm2';
+    
+    if (!m) {
+      // Tenta hectares
+      m = text.match(new RegExp(label + '\\s*[\\r\\n]+([\\s\\d.,]+)\\s*(?:hectares?|ha)', 'i'));
+      unit = 'ha';
+    }
+
+    if (!m) return { value: null, unit: 'm2' };
+
+    const raw = m[1].trim();
+    // Formato BR: "5.300,00" → remover pontos de milhar (antes de 3 dígitos), trocar vírgula por ponto
+    const normalized = raw.replace(/\.(?=\d{3}(?:[.,]|$))/g, '').replace(',', '.');
+    let val = parseFloat(normalized);
+    
+    if (isNaN(val)) return { value: null, unit: 'm2' };
+    
+    // Se for hectare, converte pra m2 pro banco mas mantém o unit pra flag
+    if (unit === 'ha') {
+       return { value: val * 10000, unit: 'ha' };
+    }
+    return { value: val, unit: 'm2' };
   }
-  r.area_total     = extrairArea('[AÁ]rea Total') || null;
-  r.area_construida = extrairArea('[AÁ]rea Constru[ií]da') || null;
+
+  const areaTotalObj = extrairArea('[AÁ]rea Total');
+  r.area_total = areaTotalObj.value;
+  r.unidade_area = areaTotalObj.unit;
+
+  const areaConstruidaObj = extrairArea('[AÁ]rea Constru[ií]da');
+  r.area_construida = areaConstruidaObj.value;
 
   const endM   = text.match(/Endere[çc]o:\s*(.+)/i);
   const bairroM = text.match(/Bairro:\s*(.+)/i);
@@ -156,15 +182,15 @@ async function main() {
 
       // 2. Gravar Imóvel no Banco
       const resDb = await db.raw(
-        `INSERT INTO imoveis (titulo, descricao, tipo, finalidade, preco, area_total, area_construida, quartos, suites, banheiros, vagas_garagem, endereco, bairro, cidade, estado, cep, categoria_id, destaque, novo, ativo, created_at, updated_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,NOW(),NOW()) RETURNING id`,
+        `INSERT INTO imoveis (titulo, descricao, tipo, finalidade, preco, area_total, area_construida, quartos, suites, banheiros, vagas_garagem, endereco, bairro, cidade, estado, cep, categoria_id, destaque, novo, ativo, created_at, updated_at, unidade_area)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,NOW(),NOW(),?) RETURNING id`,
         [
           tituloFinal, parsedData.descricao || null, tipoFinal, finalidadeFinal, precoFinal,
           parsedData.area_total || null, parsedData.area_construida || null,
           parsedData.quartos || 0, parsedData.suites || 0, parsedData.banheiros || 0,
           parsedData.vagas_garagem || 0, parsedData.endereco || null, parsedData.bairro || null,
           parsedData.cidade || 'Maringá', parsedData.estado || 'PR', null, catId,
-          false, false
+          false, false, parsedData.unidade_area || 'm2'
         ]
       );
       const imovelId = resDb.rows[0].id;

@@ -37,53 +37,198 @@
         </div>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);">Imóveis Recentes</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);">Imóveis em Destaque</h3>
+          <p style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:4px;">Arraste para reordenar. O primeiro da esquerda é a Capa Principal do site.</p>
+        </div>
         <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
       </div>
 
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Foto</th>
-              <th>Título</th>
-              <th>Tipo</th>
-              <th>Preço</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% recentes.forEach(function(im) { %>
-            <tr>
-              <td>
-                <% if (im.foto_principal) { %>
-                  <img class="admin-table__thumb" src="<%= im.foto_principal %>" alt="">
-                <% } else { %>
-                  <div style="width:48px;height:36px;background:var(--surface-container-high);border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:1.25rem;">🏠</div>
-                <% } %>
-              </td>
-              <td><strong><%= im.titulo %></strong></td>
-              <td style="text-transform:capitalize;"><%= im.tipo %></td>
-              <td><%= im.preco_formatado %></td>
-              <td>
-                <span class="status <%= im.ativo ? 'status--active' : 'status--inactive' %>">
-                  <%= im.ativo ? 'Ativo' : 'Inativo' %>
-                </span>
-              </td>
-              <td>
-                <div class="action-btns">
-                  <a href="/admin/imoveis/<%= im.id %>/editar" class="action-btn action-btn--edit">Editar</a>
-                </div>
-              </td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
+      <div class="destaques-grid" id="destaquesGrid">
+        <% destaques.forEach(function(im, index) { %>
+        <div class="destaque-card <%= index === 0 ? 'destaque-card--capa' : '' %>" draggable="true" data-id="<%= im.id %>">
+          <% if (index === 0) { %>
+            <div class="destaque-card__badge">👑 Capa Principal</div>
+          <% } else { %>
+            <div class="destaque-card__num"><%= index + 1 %></div>
+          <% } %>
+          <div class="destaque-card__thumb">
+            <% if (im.foto_principal) { %>
+              <img src="<%= im.foto_principal %>" alt="">
+            <% } else { %>
+              <div class="destaque-card__placeholder">🏠</div>
+            <% } %>
+          </div>
+          <div class="destaque-card__info">
+            <div class="destaque-card__title" title="<%= im.titulo %>"><%= im.titulo %></div>
+            <div class="destaque-card__price"><%= im.preco_formatado %></div>
+          </div>
+          <div class="destaque-card__actions">
+            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;" onclick="openSubModal(<%= im.id %>)">Substituir</button>
+            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;background:rgba(186, 26, 26, 0.05);color:var(--error);" onclick="removerDestaque(<%= im.id %>)">Remover</button>
+          </div>
+        </div>
+        <% }) %>
+
+        <% if (destaques.length < 3) { %>
+          <div class="destaque-card destaque-card--empty" onclick="openSubModal(null)">
+             <div style="font-size:2rem;color:var(--outline);margin-bottom:8px;">+</div>
+             <div style="font-size:var(--label-sm);color:var(--on-surface-variant);">Adicionar Destaque</div>
+          </div>
+        <% } %>
       </div>
+
     </div>
   </main>
 </div>
+
+<!-- Modal Substituir Destaque -->
+<div class="sub-modal" id="subModal">
+  <div class="sub-modal__content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-family:var(--font-serif);font-size:1.25rem;">Escolher Imóvel</h3>
+      <button onclick="closeSubModal()" style="background:none;border:none;font-size:1.25rem;cursor:pointer;">✕</button>
+    </div>
+    <input type="text" id="subSearch" class="input" placeholder="Buscar imóvel por título..." style="margin-bottom:1rem;">
+    <div class="sub-results" id="subResults">
+      <!-- Resultados via JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- DRAG & DROP ----------
+const grid = document.getElementById('destaquesGrid');
+let draggedItem = null;
+
+grid.addEventListener('dragstart', (e) => {
+  const card = e.target.closest('.destaque-card');
+  if (!card || card.classList.contains('destaque-card--empty')) {
+    e.preventDefault();
+    return;
+  }
+  draggedItem = card;
+  setTimeout(() => card.style.opacity = '0.5', 0);
+});
+
+grid.addEventListener('dragend', async (e) => {
+  if (draggedItem) {
+    draggedItem.style.opacity = '1';
+    draggedItem = null;
+    await salvarOrdem();
+  }
+});
+
+grid.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  const card = e.target.closest('.destaque-card');
+  if (card && card !== draggedItem && !card.classList.contains('destaque-card--empty')) {
+    const rect = card.getBoundingClientRect();
+    const midPoint = rect.left + rect.width / 2;
+    if (e.clientX < midPoint) {
+      grid.insertBefore(draggedItem, card);
+    } else {
+      grid.insertBefore(draggedItem, card.nextSibling);
+    }
+  }
+});
+
+async function salvarOrdem() {
+  const cards = grid.querySelectorAll('.destaque-card:not(.destaque-card--empty)');
+  const ids = Array.from(cards).map(c => c.dataset.id);
+  
+  try {
+    const res = await fetch('/admin/imoveis/reorder-destaques', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    if (res.ok) window.location.reload();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// ---------- SUBSTITUIR MODAL ----------
+let currentReplaceId = null;
+
+function openSubModal(idToReplace) {
+  currentReplaceId = idToReplace;
+  document.getElementById('subModal').classList.add('sub-modal--active');
+  document.getElementById('subSearch').value = '';
+  document.getElementById('subSearch').focus();
+  searchImoveis('');
+}
+
+function closeSubModal() {
+  document.getElementById('subModal').classList.remove('sub-modal--active');
+  currentReplaceId = null;
+}
+
+document.getElementById('subSearch').addEventListener('input', (e) => {
+  searchImoveis(e.target.value);
+});
+
+async function searchImoveis(query) {
+  const res = await fetch(`/admin/imoveis-search?q=${encodeURIComponent(query)}`);
+  const data = await res.json();
+  const box = document.getElementById('subResults');
+  box.innerHTML = '';
+  
+  if (data.imoveis.length === 0) {
+    box.innerHTML = '<div style="padding:1rem;color:var(--on-surface-variant);text-align:center;">Nenhum imóvel disponível encontrado.</div>';
+    return;
+  }
+  
+  data.imoveis.forEach(im => {
+    const div = document.createElement('div');
+    div.className = 'sub-result-item';
+    div.innerHTML = `
+      <div style="display:flex;gap:1rem;align-items:center;">
+        <img src="${im.foto_principal || ''}" style="width:50px;height:40px;object-fit:cover;border-radius:4px;background:#eee;">
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;">${im.titulo}</div>
+          <div style="font-size:0.75rem;color:var(--on-surface-variant);">${im.preco_formatado}</div>
+        </div>
+      </div>
+      <button class="btn btn--primary btn--sm" style="font-size:10px;padding:4px 8px;">Selecionar</button>
+    `;
+    div.addEventListener('click', () => selecionarSubstituto(im.id));
+    box.appendChild(div);
+  });
+}
+
+async function selecionarSubstituto(newId) {
+  try {
+    if (currentReplaceId) {
+      // É uma substituição
+      const res = await fetch('/admin/imoveis/substituir-destaque', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldId: currentReplaceId, newId })
+      });
+      if (res.ok) window.location.reload();
+    } else {
+      // É adicionar um destaque (caso tenha menos de 3)
+      const res = await fetch(`/admin/imoveis/${newId}/destaque`, { method: 'PUT' });
+      if (res.ok) window.location.reload();
+      else {
+        const d = await res.json();
+        alert(d.error || 'Erro ao adicionar destaque');
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function removerDestaque(id) {
+  if (confirm('Deseja realmente remover este imóvel dos Destaques? (O imóvel não será apagado, apenas deixará de ser Destaque)')) {
+     const res = await fetch(`/admin/imoveis/${id}/destaque`, { method: 'PUT' });
+     if (res.ok) window.location.reload();
+  }
+}
+</script>
 </body>
 </html>

@@ -162,13 +162,13 @@ router.get('/', isAuthenticated, (req, res) => res.redirect('/admin/dashboard'))
 // GET /admin/dashboard
 router.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
-    const [totalRes, ativosRes, contatosRes, recentes] = await Promise.all([
+    const [totalRes, ativosRes, contatosRes, destaquesRes] = await Promise.all([
       db.raw('SELECT COUNT(*) FROM imoveis'),
       db.raw('SELECT COUNT(*) FROM imoveis WHERE ativo = true'),
       db.raw('SELECT COUNT(*) FROM contatos WHERE lido = false'),
       db.raw(
         `SELECT i.*, (SELECT path FROM imovel_fotos WHERE imovel_id = i.id AND principal = true LIMIT 1) AS foto_principal
-         FROM imoveis i ORDER BY i.created_at DESC LIMIT 5`
+         FROM imoveis i WHERE i.destaque = true ORDER BY COALESCE(i.ordem_destaque, 999) ASC, i.updated_at DESC LIMIT 3`
       ),
     ]);
 
@@ -180,7 +180,7 @@ router.get('/dashboard', isAuthenticated, async (req, res) => {
         ativos: ativosRes.rows[0].count,
         contatos: contatosRes.rows[0].count,
       },
-      recentes: recentes.rows.map((i) => ({ ...i, preco_formatado: formatarPreco(i.preco) })),
+      destaques: destaquesRes.rows.map((i) => ({ ...i, preco_formatado: formatarPreco(i.preco) })),
     });
   } catch (err) {
     console.error(err);
@@ -211,13 +211,17 @@ router.get('/imoveis', isAuthenticated, async (req, res) => {
 
 // GET /admin/imoveis/novo
 router.get('/imoveis/novo', isAuthenticated, async (req, res) => {
-  const categorias = await db.raw('SELECT * FROM categorias WHERE ativo = true ORDER BY ordem');
+  const [categoriasRes, destaquesCount] = await Promise.all([
+    db.raw('SELECT * FROM categorias WHERE ativo = true ORDER BY ordem'),
+    db.raw('SELECT COUNT(*) FROM imoveis WHERE destaque = true'),
+  ]);
   res.render('admin/imovel-form', {
     title: 'Novo Imóvel — Admin',
     adminNome: req.session.adminNome,
     imovel: null,
     fotos: [],
-    categorias: categorias.rows,
+    categorias: categoriasRes.rows,
+    totalDestaques: parseInt(destaquesCount.rows[0].count),
     errors: [],
   });
 });
@@ -237,7 +241,7 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
     area_total, area_construida, quartos, suites,
     banheiros, vagas_garagem, endereco, bairro,
     cidade, estado, cep, categoria_id,
-    destaque, novo, andar, apto,
+    destaque, novo, andar, apto, unidade_area,
   } = req.body;
 
   const errors = [];
@@ -262,8 +266,8 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
     const result = await db.raw(
       `INSERT INTO imoveis (titulo, descricao, tipo, finalidade, preco, area_total, area_construida,
         quartos, suites, banheiros, vagas_garagem, endereco, bairro, cidade, estado, cep,
-        categoria_id, destaque, novo, ativo, andar, apto, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,?,?,NOW())
+        categoria_id, destaque, novo, ativo, andar, apto, unidade_area, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,?,?,?,NOW())
        RETURNING id`,
       [
         titulo, descricao || null, tipo, finalidade, parseFloat(preco),
@@ -274,28 +278,22 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
         cidade || 'Maringá', estado || 'PR', cep || null,
         categoria_id || null,
         destaque === 'on', novo === 'on',
-        andar || null, apto || null,
+        andar || null, apto || null, unidade_area || 'm2',
       ]
     );
     const imovelId = result.rows[0].id;
 
     if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
+      await Promise.all(req.files.map(async (file, i) => {
         try {
           const publicUrl = await uploadToSupabase(file.path, `imoveis/${file.filename}`, file.mimetype) || `/uploads/imoveis/${file.filename}`;
           await db.raw(
-            `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem)
-             VALUES (?,?,?,?,?)`,
+            `INSERT INTO imovel_fotos (imovel_id, filename, path, principal, ordem) VALUES (?,?,?,?,?)`,
             [imovelId, file.filename, publicUrl, i === 0, i]
           );
-          if (publicUrl !== `/uploads/imoveis/${file.filename}` && fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-        } catch (e) {
-          console.error("Supabase upload error:", e);
-        }
-      }
+          if (publicUrl !== `/uploads/imoveis/${file.filename}` && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } catch (e) { console.error('Supabase upload error:', e); }
+      }));
     }
 
     res.redirect('/admin/imoveis');
@@ -317,10 +315,11 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
 router.get('/imoveis/:id/editar', isAuthenticated, async (req, res) => {
   const { id } = req.params;
   try {
-    const [imovelRes, fotosRes, categoriasRes] = await Promise.all([
+    const [imovelRes, fotosRes, categoriasRes, destaquesCount] = await Promise.all([
       db.raw('SELECT * FROM imoveis WHERE id = ?', [id]),
       db.raw('SELECT * FROM imovel_fotos WHERE imovel_id = ? ORDER BY ordem ASC', [id]),
       db.raw('SELECT * FROM categorias WHERE ativo = true ORDER BY ordem'),
+      db.raw('SELECT COUNT(*) FROM imoveis WHERE destaque = true'),
     ]);
     const imovel = imovelRes.rows[0];
     if (!imovel) return res.redirect('/admin/imoveis');
@@ -331,6 +330,7 @@ router.get('/imoveis/:id/editar', isAuthenticated, async (req, res) => {
       imovel,
       fotos: fotosRes.rows,
       categorias: categoriasRes.rows,
+      totalDestaques: parseInt(destaquesCount.rows[0].count),
       errors: [],
     });
   } catch (err) {
@@ -355,7 +355,7 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
     area_total, area_construida, quartos, suites,
     banheiros, vagas_garagem, endereco, bairro,
     cidade, estado, cep, categoria_id,
-    destaque, novo, ativo, andar, apto,
+    destaque, novo, ativo, andar, apto, unidade_area,
   } = req.body;
 
   const errors = [];
@@ -383,7 +383,7 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
       `UPDATE imoveis SET titulo=?, descricao=?, tipo=?, finalidade=?, preco=?,
         area_total=?, area_construida=?, quartos=?, suites=?, banheiros=?,
         vagas_garagem=?, endereco=?, bairro=?, cidade=?, estado=?, cep=?,
-        categoria_id=?, destaque=?, novo=?, ativo=?, andar=?, apto=?, updated_at=NOW()
+        categoria_id=?, destaque=?, novo=?, ativo=?, andar=?, apto=?, unidade_area=?, updated_at=NOW()
        WHERE id=?`,
       [
         titulo, descricao || null, tipo, finalidade || 'venda', parseFloat(preco),
@@ -394,7 +394,7 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
         cidade || 'Maringá', estado || 'PR', cep || null,
         categoria_id || null,
         destaque === 'on', novo === 'on', ativo === 'on',
-        andar || null, apto || null,
+        andar || null, apto || null, unidade_area || 'm2',
         id,
       ]
     );
@@ -561,7 +561,7 @@ router.put('/imoveis/:id/destaque', isAuthenticated, async (req, res) => {
     const isDestaque = cur.rows[0].destaque;
     if (isDestaque) {
       // já é destaque → remove
-      await db.raw('UPDATE imoveis SET destaque = false WHERE id = ?', [id]);
+      await db.raw('UPDATE imoveis SET destaque = false, ordem_destaque = 0 WHERE id = ?', [id]);
       res.json({ success: true, destaque: false });
     } else {
       // não é destaque → verifica quantos já existem
@@ -570,12 +570,68 @@ router.put('/imoveis/:id/destaque', isAuthenticated, async (req, res) => {
          return res.status(400).json({ error: 'Limite Máximo Atingido: Você já possui 3 imóveis em Destaque. Remova a estrela de algum antes de destacar este.' });
       }
       
+      const maxOrdem = await db.raw('SELECT COALESCE(MAX(ordem_destaque), 0) AS max FROM imoveis WHERE destaque = true');
+      const nextOrdem = parseInt(maxOrdem.rows[0].max) + 1;
       // se tem menos que 3, simplesmente ativa este também
-      await db.raw('UPDATE imoveis SET destaque = true, updated_at = NOW() WHERE id = ?', [id]);
+      await db.raw('UPDATE imoveis SET destaque = true, ordem_destaque = ?, updated_at = NOW() WHERE id = ?', [nextOrdem, id]);
       res.json({ success: true, destaque: true });
     }
   } catch (err) {
     res.status(500).json({ error: 'Erro.' });
+  }
+});
+
+// POST /admin/imoveis/reorder-destaques
+router.post('/imoveis/reorder-destaques', isAuthenticated, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) return res.status(400).json({ error: 'IDs inválidos.' });
+
+  try {
+    for (let i = 0; i < ids.length; i++) {
+      await db.raw('UPDATE imoveis SET ordem_destaque = ? WHERE id = ?', [i + 1, ids[i]]);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Erro reordenando destaques:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+// GET /admin/imoveis-search
+router.get('/imoveis-search', isAuthenticated, async (req, res) => {
+  const q = req.query.q || '';
+  try {
+    const result = await db.raw(
+      `SELECT i.id, i.titulo, i.preco, 
+        (SELECT path FROM imovel_fotos WHERE imovel_id = i.id AND principal = true LIMIT 1) AS foto_principal
+       FROM imoveis i
+       WHERE i.ativo = true AND i.destaque = false AND i.titulo ILIKE ?
+       ORDER BY i.created_at DESC LIMIT 10`,
+      [`%${q}%`]
+    );
+    res.json({ success: true, imoveis: result.rows.map(i => ({ ...i, preco_formatado: formatarPreco(i.preco) })) });
+  } catch (err) {
+    console.error('Erro ao buscar imóveis:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+// POST /admin/imoveis/substituir-destaque
+router.post('/imoveis/substituir-destaque', isAuthenticated, async (req, res) => {
+  const { oldId, newId } = req.body;
+  if (!oldId || !newId) return res.status(400).json({ error: 'IDs ausentes.' });
+
+  try {
+    const oldInfo = await db.raw('SELECT ordem_destaque FROM imoveis WHERE id = ?', [oldId]);
+    const ordem = oldInfo.rows[0] ? oldInfo.rows[0].ordem_destaque : 0;
+
+    await db.raw('UPDATE imoveis SET destaque = false, ordem_destaque = 0 WHERE id = ?', [oldId]);
+    await db.raw('UPDATE imoveis SET destaque = true, ordem_destaque = ? WHERE id = ?', [ordem, newId]);
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao substituir destaque:', err);
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
@@ -698,21 +754,16 @@ router.post('/condominios', isAuthenticated, condUpload.array('fotos', 20), asyn
     );
     const condId = ins.rows[0].id;
     if (req.files && req.files.length) {
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
+      await Promise.all(req.files.map(async (file, i) => {
         try {
           const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
           await db.raw(
             `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, ?, ?)`,
             [condId, file.filename, publicUrl, i === 0, i]
           );
-          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-        } catch (e) {
-          console.error("Supabase upload error:", e);
-        }
-      }
+          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } catch (e) { console.error('Supabase upload error:', e); }
+      }));
     }
     res.redirect('/admin/condominios');
   } catch (err) {
@@ -758,21 +809,17 @@ router.put('/condominios/:id', isAuthenticated, condUpload.array('fotos', 20), a
     );
     if (req.files && req.files.length) {
       const ordemRes = await db.raw('SELECT COALESCE(MAX(ordem),0)+1 AS next FROM condominio_fotos WHERE condominio_id=?', [id]);
-      let ordem = ordemRes.rows[0].next;
-      for (const file of req.files) {
+      const ordemBase = ordemRes.rows[0].next;
+      await Promise.all(req.files.map(async (file, i) => {
         try {
           const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
           await db.raw(
             `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, false, ?)`,
-            [id, file.filename, publicUrl, ordem++]
+            [id, file.filename, publicUrl, ordemBase + i]
           );
-          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-        } catch (e) {
-          console.error("Supabase upload error:", e);
-        }
-      }
+          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } catch (e) { console.error('Supabase upload error:', e); }
+      }));
     }
     res.redirect('/admin/condominios');
   } catch (err) {

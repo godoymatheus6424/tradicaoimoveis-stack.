@@ -30,8 +30,10 @@ async function uploadToSupabase(localFilePath, destinationPath, mimetype) {
       finalContentType = 'image/webp';
       
       fileBuffer = await sharp(fileBuffer)
-        .resize({ width: 1920, height: 1080, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85 })
+        .rotate()                                                           // corrige orientação EXIF automaticamente
+        .resize({ width: 1280, height: 960, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 78, effort: 3, smartSubsample: true })            // effort 3 = rapordering mais rápido
+        .withMetadata(false)                                                // remove EXIF → arquivo menor
         .toBuffer();
     }
     

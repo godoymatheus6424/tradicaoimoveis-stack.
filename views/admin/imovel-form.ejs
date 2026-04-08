@@ -120,8 +120,20 @@
 
           <div class="admin-form__grid">
             <div>
-              <label class="input-label">Área Total (m²)</label>
-              <input type="number" name="area_total" class="input" step="0.01" min="0" value="<%= imovel ? imovel.area_total || '' : '' %>">
+              <label class="input-label">Área Total</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="areaTotal_display" class="input" step="0.01" min="0"
+                  value="<%= imovel && imovel.area_total ? (imovel.unidade_area === 'ha' ? (imovel.area_total / 10000).toFixed(4) : imovel.area_total) : '' %>"
+                  style="flex:1;" oninput="syncArea('total')">
+                <select id="areaTotal_unit" class="input" style="width:72px;flex-shrink:0;" onchange="syncArea('total')">
+                  <option value="m2" <%= !imovel || imovel.unidade_area !== 'ha' ? 'selected' : '' %>>m²</option>
+                  <option value="ha" <%= imovel && imovel.unidade_area === 'ha' ? 'selected' : '' %>>ha</option>
+                </select>
+              </div>
+              <input type="hidden" name="area_total" id="area_total_hidden"
+                value="<%= imovel ? imovel.area_total || '' : '' %>">
+              <input type="hidden" name="unidade_area" id="unidade_area_hidden"
+                value="<%= imovel ? imovel.unidade_area || 'm2' : 'm2' %>">
             </div>
             <div>
               <label class="input-label">Área Construída (m²)</label>
@@ -180,11 +192,25 @@
 
           <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1.5rem;padding:1rem 0;border-top:1px solid var(--surface-container-high);border-bottom:1px solid var(--surface-container-high);">Configurações</h3>
 
-          <div style="display:flex;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-              <input type="checkbox" name="destaque" <%= imovel && imovel.destaque ? 'checked' : '' %>>
-              <span class="input-label" style="margin-bottom:0;">Imóvel Destaque</span>
-            </label>
+          <div style="display:flex;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:flex-start;">
+            <% 
+              const jaEhDestaque = imovel && imovel.destaque;
+              const limiteBloqueado = !jaEhDestaque && totalDestaques >= 3;
+            %>
+            <div>
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:<%= limiteBloqueado ? 'not-allowed' : 'pointer' %>;">
+                <input type="checkbox" name="destaque" id="destaqueCheck"
+                  <%= jaEhDestaque ? 'checked' : '' %>
+                  <%= limiteBloqueado ? 'disabled' : '' %>
+                >
+                <span class="input-label" style="margin-bottom:0;opacity:<%= limiteBloqueado ? '0.45' : '1' %>;">Imóvel Destaque</span>
+              </label>
+              <% if (limiteBloqueado) { %>
+                <div style="margin-top:6px;font-size:0.7rem;color:var(--on-surface-variant);max-width:240px;line-height:1.4;">
+                  Limite atingido — remova um destaque no <a href="/admin/dashboard" style="color:var(--primary);font-weight:600;">Dashboard</a> para adicionar outro.
+                </div>
+              <% } %>
+            </div>
             <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
               <input type="checkbox" name="novo" <%= imovel && imovel.novo ? 'checked' : '' %>>
               <span class="input-label" style="margin-bottom:0;">Marcar como Novo</span>
@@ -197,37 +223,32 @@
             <% } %>
           </div>
 
-          <!-- Fotos existentes -->
-          <% if (fotos && fotos.length > 0) { %>
-          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1rem;padding-top:1rem;border-top:1px solid var(--surface-container-high);">Fotos Atuais</h3>
+          <!-- Fotos e Upload -->
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1rem;padding-top:1rem;border-top:1px solid var(--surface-container-high);">Fotos</h3>
+          
           <div class="upload-preview" id="fotosAtuais">
-            <% fotos.forEach(function(foto) { %>
-            <div class="upload-preview__item" id="foto-<%= foto.id %>">
-              <img src="<%= foto.path %>" alt="">
-              <% if (foto.principal) { %>
-              <div class="upload-preview__star">✓ Principal</div>
-              <% } else { %>
-              <button type="button" class="upload-preview__star" onclick="setPrincipal(<%= foto.id %>)">Principal</button>
-              <% } %>
-              <button type="button" class="upload-preview__del" onclick="deletarFoto(<%= foto.id %>)">✕</button>
-            </div>
-            <% }) %>
-          </div>
-          <% } %>
-
-          <!-- Upload novas fotos -->
-          <div id="uploadFotosManual" style="margin-top:1.5rem;border-top:1px solid var(--surface-container-high);padding-top:1.5rem;">
-            <label class="input-label" style="margin-bottom:1rem;">Adicionar Fotos</label>
-            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotosInput').click()">
-              <div class="upload-area__icon">📷</div>
-              <div class="upload-area__text">
-                Clique ou arraste fotos aqui<br>
-                <small style="color:var(--outline);">JPG, PNG, WEBP · máx 10MB · até 20 fotos</small>
+            <% if (typeof fotos !== 'undefined' && fotos && fotos.length > 0) { %>
+              <% fotos.forEach(function(foto) { %>
+              <div class="upload-preview__item" id="foto-<%= foto.id %>">
+                <img src="<%= foto.path %>" alt="">
+                <% if (foto.principal) { %>
+                <div class="upload-preview__star">✓ Principal</div>
+                <% } else { %>
+                <button type="button" class="upload-preview__star" onclick="setPrincipal(<%= foto.id %>)">Principal</button>
+                <% } %>
+                <button type="button" class="upload-preview__del" onclick="deletarFoto(<%= foto.id %>)">✕</button>
               </div>
-              <input type="file" id="fotosInput" name="fotos" multiple accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="previewFotos(this)">
+              <% }) %>
+            <% } %>
+
+            <!-- Botão de Upload estilo quadrado + -->
+            <div class="upload-preview__item upload-add-btn" onclick="document.getElementById('fotosInput').click()" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.02);border:2px dashed var(--outline-variant);cursor:pointer;transition:all 0.3s ease;">
+              <span style="font-size:2.5rem;color:var(--outline-variant);font-weight:300;">+</span>
             </div>
-            <div class="upload-preview" id="previewNovos"></div>
           </div>
+          
+          <input type="file" id="fotosInput" name="fotos" multiple accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="previewFotos(this)">
+          <div class="upload-preview" id="previewNovos" style="margin-top:1rem;"></div>
 
           <div style="display:flex;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--surface-container-high);">
             <button type="submit" class="btn btn--primary"><%= imovel ? 'Salvar Alterações' : 'Cadastrar Imóvel' %></button>
@@ -240,6 +261,27 @@
 </div>
 <script src="/js/admin.js"></script>
 <script>
+// ── Conversão de Área ha ↔ m² ──
+function syncArea(tipo) {
+  const display = document.getElementById('areaTotal_display');
+  const unit    = document.getElementById('areaTotal_unit');
+  const hidden  = document.getElementById('area_total_hidden');
+  const unitHid = document.getElementById('unidade_area_hidden');
+  if (!display || !unit || !hidden) return;
+
+  const val = parseFloat(display.value);
+  if (isNaN(val) || display.value === '') {
+    hidden.value = '';
+  } else if (unit.value === 'ha') {
+    hidden.value = (val * 10000).toFixed(2); // 1 ha = 10.000 m²
+  } else {
+    hidden.value = val;
+  }
+  if (unitHid) unitHid.value = unit.value === 'ha' ? 'ha' : 'm2';
+}
+// Inicializa ao carregar
+document.addEventListener('DOMContentLoaded', () => syncArea('total'));
+
 // ── Sob Consulta ──
 function toggleSobConsulta(cb) {
   const input = document.getElementById('precoInput');

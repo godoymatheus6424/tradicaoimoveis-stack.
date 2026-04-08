@@ -253,7 +253,7 @@
 
 .footer__grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: var(--space-3xl);
   margin-bottom: var(--space-3xl);
 }
@@ -521,8 +521,9 @@
   /* Container mais estreito */
   .container { padding: 0 var(--space-md); }
 
-  /* Logo menor no nav para não competir com o botão */
-  .nav__logo-img { height: 28px; }
+  /* Header maior no mobile para dar mais ênfase à logo */
+  .nav { padding: 1.25rem 0; }
+  .nav__logo-img { height: 44px; }
 
   /* Botão "Agendar Visita" some no mobile pequeno, fica só o burger */
   .nav__actions .btn { display: none; }
@@ -532,6 +533,18 @@
     white-space: normal;
     font-size: clamp(1.5rem, 5vw, 2rem);
     gap: 0.25em !important;
+  }
+
+  /* Nossos Imóveis - remove fundo preto no mobile */
+  .imoveis-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .imoveis-title {
+    color: var(--on-surface);
+  }
+  .imoveis-subtitle {
+    color: var(--on-surface-variant);
   }
 
   /* Footer simplificado */

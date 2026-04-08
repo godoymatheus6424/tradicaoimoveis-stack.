@@ -28,7 +28,8 @@ function cardImovel(im) {
   const specs = [
     im.quartos > 0       ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20V8a2 2 0 012-2h14a2 2 0 012 2v12"/><path d="M3 14h18"/><path d="M7 14v6"/><path d="M17 14v6"/></svg>${im.quartos}</span>` : '',
     im.banheiros > 0     ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/><path d="M4 12V6a2 2 0 012-2h4a2 2 0 012 2v6"/><rect x="2" y="12" width="20" height="4" rx="1"/><path d="M6 20v-4"/><path d="M18 20v-4"/></svg>${im.banheiros}</span>` : '',
-    im.area_total        ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>${Math.round(im.area_total)}m²</span>` : '',
+    im.area_total ? 
+    `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>${im.unidade_area === 'ha' ? (im.area_total / 10000).toLocaleString('pt-BR', { maximumFractionDigits: 4 }) + ' ha' : Math.round(im.area_total) + ' m²'}</span>` : '',
     im.vagas_garagem > 0 ? `<span class="glass-spec"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/></svg>${im.vagas_garagem}</span>` : '',
   ].filter(Boolean).join('');
 

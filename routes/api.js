@@ -37,8 +37,8 @@ router.get('/imoveis', async (req, res) => {
   const filterParams = [];
   const conditions = ['i.ativo = true'];
 
-  if (tipo) { filterParams.push(tipo); conditions.push('i.tipo = ?'); }
-  if (finalidade) { filterParams.push(finalidade); conditions.push('i.finalidade = ?'); }
+  if (tipo) { filterParams.push(tipo); conditions.push('i.tipo ILIKE ?'); }
+  if (finalidade) { filterParams.push(finalidade); conditions.push('i.finalidade ILIKE ?'); }
   if (preco_min && !isNaN(preco_min)) { filterParams.push(parseFloat(preco_min)); conditions.push('i.preco >= ?'); }
   if (preco_max && !isNaN(preco_max)) { filterParams.push(parseFloat(preco_max)); conditions.push('i.preco <= ?'); }
   if (quartos && !isNaN(quartos)) { filterParams.push(parseInt(quartos)); conditions.push('i.quartos >= ?'); }

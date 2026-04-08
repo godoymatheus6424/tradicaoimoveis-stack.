@@ -46,8 +46,7 @@
     <a href="/" class="drawer__link <%= currentPath === '/' ? 'drawer__link--active' : '' %>">Home</a>
     <a href="/imoveis" class="drawer__link <%= currentPath.startsWith('/imoveis') || currentPath.startsWith('/imovel') ? 'drawer__link--active' : '' %>">Nossos Imóveis</a>
     <a href="/imoveis?finalidade=venda" class="drawer__link">Comprar</a>
-    <a href="/imoveis?finalidade=locacao" class="drawer__link">Alugar</a>
-    <a href="/sobre" class="drawer__link <%= currentPath === '/sobre' ? 'drawer__link--active' : '' %>">Sobre</a>
+    <a href="/imoveis?finalidade=aluguel" class="drawer__link">Alugar</a>
     <a href="/contato" class="drawer__link <%= currentPath === '/contato' ? 'drawer__link--active' : '' %>">Fale Conosco</a>
   </nav>
   <div class="drawer__footer">

@@ -29,7 +29,7 @@
         <div class="hero__actions" style="margin-top:2rem;">
           <% if (destaque) { %>
             <a href="#carrossel-destaques" class="btn btn--primary">Ver imóveis em destaque</a>
-            <a href="/imoveis" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Todos os Imóveis</a>
+            <a href="/imoveis" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);" onmouseover="this.style.color='#1a1714'" onmouseout="this.style.color='rgba(245,240,232,0.85)'">Todos os Imóveis</a>
           <% } else { %>
             <a href="/imoveis" class="btn btn--primary">Ver Imóveis</a>
             <a href="/contato" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Fale Conosco</a>
@@ -48,244 +48,256 @@
   </div>
 </section>
 
-<!-- SEÇÃO CARROSSEL DE DESTAQUES -->
+<!-- SEÇÃO STORIES DESTAQUES (CHARACTER SELECTOR) -->
 <% if (destaques && destaques.length > 0) { %>
-<section class="destaque-section" id="carrossel-destaques">
-
-  <!-- Cabeçalho compacto: título pequeno + linha decorativa + setas -->
-  <div class="destaque-header">
-    <h2 class="destaque-label section__title--destaque">Nossos <em>Destaques</em></h2>
-    <div class="destaque-line"></div>
-    <div class="destaque-nav">
-      <button class="carousel-btn carousel-btn--prev" aria-label="Anterior" onclick="scrollCarousel(-1)">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
-      </button>
-      <button class="carousel-btn carousel-btn--next" aria-label="Próximo" onclick="scrollCarousel(1)">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-      </button>
-    </div>
+<section class="destaque-section" id="carrossel-destaques" style="padding: 4rem 0;">
+  <div class="container" style="text-align:center; padding-bottom: 2rem;">
+    <h2 class="section__title--destaque" style="display:inline-block; font-size:clamp(1.8rem, 3vw, 2.5rem);">
+      Nossos <em>Destaques</em>
+    </h2>
+    <div style="height:2px; width:60px; background:var(--primary); margin: 0.5rem auto 0;"></div>
   </div>
 
-  <!-- Carrossel com margens laterais -->
-  <div style="position: relative; padding: 0 2rem;">
-      <!-- Container com scroll-snap horizontal dinâmico -->
-      <div id="destaquesContainer" class="destaques-carousel fade-in" style="gap:0; border-radius:24px;">
-      
-      <% destaques.forEach((item) => { %>
-        <!-- Wrapper faz o clipping; o <a> recebe o transform 3D livremente -->
-        <div class="carousel-clip">
-          <a href="/imovel/<%= item.id %>" class="lg-card carousel-card">
+  <div class="cs-wrapper container">
+    <!-- Botão Esq -->
+    <button class="cs-nav-btn" id="csPrev" aria-label="Destaque Anterior">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
 
-            <!-- Imagem de fundo -->
-            <div class="lg-card__bg">
-              <% if (item.foto_principal) { %>
-                <img src="<%= item.foto_principal %>" alt="<%= item.titulo %>">
-              <% } else { %>
-                <div class="lg-card__bg-placeholder">🏠</div>
+    <div class="cs-viewport">
+      <% destaques.forEach(function(item, idx) { %>
+        <div class="cs-slide <%= idx === 0 ? 'cs-slide--active' : '' %>" data-idx="<%= idx %>" data-total-fotos="<%= item.fotos.length %>">
+          
+          <div class="cs-card">
+            
+            <!-- ESTRUTURA DO CARD -->
+            
+            <!-- ÁREA DA FOTO (STORIES) -->
+            <div class="cs-card__photo">
+              <!-- INSTAGRAM CONTROLS (AVANÇAR/VOLTAR FOTO) -->
+              <div class="cs-story-ctrl cs-story-ctrl--prev"></div>
+              <div class="cs-story-ctrl cs-story-ctrl--next"></div>
+              
+              <!-- Barras de progresso das fotos -->
+              <% if (item.fotos.length > 1) { %>
+              <div class="cs-stories-progress">
+                <% item.fotos.forEach(function(foto, fIdx) { %>
+                  <div class="cs-story-bar"><div class="cs-story-fill" data-fidx="<%= fIdx %>"></div></div>
+                <% }) %>
+              </div>
               <% } %>
-            </div>
 
-            <!-- Overlay escuro gradiente -->
-            <div class="lg-card__overlay"></div>
-
-            <!-- Luz que segue o mouse -->
-            <div class="lg-card__light" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
-
-            <!-- Painel glass -->
-            <div class="lg-card__glass">
-              <div class="lg-card__glass-shine" style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:inherit; pointer-events:none;"></div>
-              <div class="lg-card__glass-content">
-                <div class="lg-card__tags">
-                  <span class="lg-tag">Destaque</span>
-                  <% if (item.categoria_nome) { %>
-                    <span class="lg-tag lg-tag--muted"><%= item.categoria_nome %></span>
-                  <% } %>
-                </div>
-
-                <h2 class="lg-card__title"><%= item.titulo %></h2>
-
-                <% if (item.bairro || item.cidade) { %>
-                <p class="lg-card__location">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                  <%= [item.bairro, item.cidade, item.estado].filter(Boolean).join(', ') %>
-                </p>
+              <!-- Camadas de fotos -->
+              <div class="cs-photo-layers">
+                <% item.fotos.forEach(function(foto, fIdx) { %>
+                  <div class="cs-photo-layer <%= fIdx === 0 ? 'cs-photo-layer--active' : '' %>" style="background-image: url('<%= foto %>');" data-fidx="<%= fIdx %>"></div>
+                <% }) %>
+              </div>
+              
+              <div class="cs-card__tags">
+                <span class="lg-tag" style="background:var(--primary);color:#fff;border:none;box-shadow:0 4px 10px rgba(0,0,0,0.5);">Destaque</span>
+                <% if (item.categoria_nome) { %>
+                  <span class="lg-tag" style="background:rgba(0,0,0,0.6);color:#fff;border:none;backdrop-filter:blur(10px);"><%= item.categoria_nome %></span>
                 <% } %>
-
-                <div class="lg-card__specs">
-                  <% if (item.quartos > 0) { %>
-                  <div class="lg-spec">
-                    <span class="lg-spec__value"><%= item.quartos %></span>
-                    <span class="lg-spec__label">Quartos</span>
-                  </div>
-                  <% } %>
-                  <% if (item.banheiros > 0) { %>
-                  <div class="lg-spec">
-                    <span class="lg-spec__value"><%= item.banheiros %></span>
-                    <span class="lg-spec__label">Banheiros</span>
-                  </div>
-                  <% } %>
-                  <% if (item.area_total) { %>
-                  <div class="lg-spec">
-                    <span class="lg-spec__value"><%= Math.round(item.area_total) %>m²</span>
-                    <span class="lg-spec__label">Área Total</span>
-                  </div>
-                  <% } %>
-                  <% if (item.vagas_garagem > 0) { %>
-                  <div class="lg-spec">
-                    <span class="lg-spec__value"><%= item.vagas_garagem %></span>
-                    <span class="lg-spec__label">Vagas</span>
-                  </div>
-                  <% } %>
-                </div>
-
-                <div class="lg-card__footer">
-                  <div class="lg-card__price"><%= item.preco_formatado %></div>
-                  <span class="lg-card__cta">Clique para saber mais</span>
-                </div>
               </div>
             </div>
-          </a>
-        </div><!-- /carousel-clip -->
-      <% }) %>
 
-      </div>
+            <!-- ÁREA DA LEGENDA (INFO) LIQUID GLASS -->
+            <div class="cs-card__info" data-target-url="/imovel/<%= item.id %>">
+              <% if (item.bairro || item.cidade) { %>
+              <p class="lg-card__location" style="color:var(--primary); margin-bottom:0.5rem; font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                <%= [item.bairro, item.cidade].filter(Boolean).join(', ') %>
+              </p>
+              <% } %>
+              
+              <h3 class="cs-card__title" style="margin-bottom:1.5rem; font-family:var(--font-serif); font-size:1.75rem; line-height:1.2; color:var(--on-surface);">
+                <%= item.titulo %>
+              </h3>
+
+              <div class="cs-card__specs" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:2rem;">
+                <% if (item.quartos > 0) { %>
+                <div class="lg-spec" style="background:transparent; border-left:2px solid var(--outline-variant); border-radius:0; padding-left:1rem; padding-top:0; padding-bottom:0; flex-direction:column; align-items:flex-start; gap:0.2rem;">
+                  <span class="lg-spec__value" style="font-size:1.2rem; color:var(--on-surface);"><%= item.quartos %></span>
+                  <span class="lg-spec__label" style="font-size:0.8rem; color:var(--on-surface-variant);">Quartos</span>
+                </div>
+                <% } %>
+                <% if (item.area_total) { %>
+                <div class="lg-spec" style="background:transparent; border-left:2px solid var(--outline-variant); border-radius:0; padding-left:1rem; padding-top:0; padding-bottom:0; flex-direction:column; align-items:flex-start; gap:0.2rem;">
+                  <span class="lg-spec__value" style="font-size:1.2rem; color:var(--on-surface);">
+                    <% if (item.unidade_area === 'ha') { %>
+                      <%= (item.area_total / 10000).toLocaleString('pt-BR', { maximumFractionDigits: 4 }) %> ha
+                    <% } else { %>
+                      <%= Math.round(item.area_total).toLocaleString('pt-BR') %> m²
+                    <% } %>
+                  </span>
+                  <span class="lg-spec__label" style="font-size:0.8rem; color:var(--on-surface-variant);">Área Total</span>
+                </div>
+                <% } %>
+                <% if (item.vagas_garagem > 0) { %>
+                <div class="lg-spec" style="background:transparent; border-left:2px solid var(--outline-variant); border-radius:0; padding-left:1rem; padding-top:0; padding-bottom:0; flex-direction:column; align-items:flex-start; gap:0.2rem;">
+                  <span class="lg-spec__value" style="font-size:1.2rem; color:var(--on-surface);"><%= item.vagas_garagem %></span>
+                  <span class="lg-spec__label" style="font-size:0.8rem; color:var(--on-surface-variant);">Vagas</span>
+                </div>
+                <% } %>
+              </div>
+
+              <div style="margin-top:auto;">
+                <div class="cs-card__price" style="font-size:1.6rem; font-weight:700; color:var(--primary); margin-bottom:0.75rem;"><%= item.preco_formatado %></div>
+                <div class="btn btn--secondary" style="width:100%; justify-content:center; padding:1rem; border-color:var(--outline-variant);">Ver Detalhes</div>
+              </div>
+              <!-- Efeito Liquid Glass Glow Overlay -->
+              <div class="cs-card__shine" style="position:absolute; top:0; left:0; width:100%; height:100%; border-radius:inherit; pointer-events:none; z-index:100;"></div>
+              
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Botão Dir -->
+    <button class="cs-nav-btn" id="csNext" aria-label="Destaque Próximo">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
   </div>
 </section>
 <% } %>
 
 <style>
-/* Esconder scrollbar nativa para design mais limpo no carousel */
-.destaques-carousel::-webkit-scrollbar {
-  display: none;
-}
-.destaques-carousel {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.lg-card__glass {
-  overflow: hidden;
-  border-radius: 24px;
-  transform: translateZ(0);
-}
-.lg-card__glass-shine {
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-/* Cabeçalho compacto da seção destaque */
-.destaque-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 2rem 1rem;
-}
-.destaque-label {
-  font-size: clamp(1.1rem, 1.6vw, 1.4rem) !important;
-  font-weight: 700;
-  margin: 0;
-  white-space: nowrap;
-  gap: 0.3em !important;
-}
-/* remove as linhas decorativas que o section__title--destaque adiciona via ::before/::after */
-.destaque-label::before,
-.destaque-label::after {
-  display: none !important;
-}
-@media (max-width: 640px) {
-  .destaque-header {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    text-align: center;
-  }
-  .destaque-line { display: none; }
-}
-.destaque-line {
-  flex: 1;
-  height: 1px;
-  margin: 0 1rem;
-  background: linear-gradient(to right, rgba(105,0,8,0.35) 0%, var(--outline-variant) 35%, transparent 100%);
-}
-.destaque-nav {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Wrapper de clipping — sem transform, então overflow:hidden funciona corretamente */
-.carousel-clip {
-  scroll-snap-align: center;
-  flex: 0 0 100%;
-  min-width: 100%;
-  overflow: hidden;
-  height: clamp(480px, 70vh, 680px);
-}
-/* O <a> ocupa todo o espaço do wrapper e recebe o transform 3D */
-.carousel-card {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Setas no cabeçalho (não mais absolutas) */
-.carousel-btn {
-  position: static;
-  transform: none;
-  z-index: 10;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--surface-container);
-  border: 1px solid var(--outline-variant);
-  color: var(--on-surface);
+/* CSS do Seletor de Personagens e Stories */
+.cs-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.cs-nav-btn {
+  width: 50px; flex-shrink: 0; height: 50px; border-radius: 50%;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant); color: var(--on-surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.cs-nav-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.05); }
+.cs-nav-btn svg { width: 24px; height: 24px; }
+
+.cs-viewport {
+  flex: 1;
+  position: relative;
+  height: clamp(550px, 60vh, 600px);
+  perspective: 1200px;
+}
+
+.cs-slide {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.cs-slide--active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  z-index: 5;
+}
+
+.cs-card {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  width: 100%; height: 100%;
+  background: var(--surface); /* Volta pro padrao limpo do projeto */
+  border-radius: 20px;
+  overflow: hidden;
+  /* SAFARI/Nativo HW Accel Overflow Fix */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  isolation: isolate;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+  text-decoration: none;
+  border: 1px solid var(--outline-variant);
+  will-change: transform;
+}
+
+/* ÁREA DA FOTO */
+.cs-card__photo {
+  position: relative;
+  flex: 5; 
+  min-height: 250px;
+  overflow: hidden;
+  z-index: 10;
+}
+.cs-card__tags {
+  position: absolute; bottom: 1.5rem; left: 1.5rem;
+  display: flex; gap: 0.5rem; z-index: 20;
+}
+
+.cs-photo-layers { position: absolute; inset: 0; }
+.cs-photo-layer {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 0.8s ease, transform 6s linear;
+  transform: scale(1.02);
+}
+.cs-photo-layer--active { opacity: 1; transform: scale(1.08); z-index: 2; }
+
+/* Progress Bars (Stories Internos) */
+.cs-stories-progress {
+  position: absolute; top: 1.5rem; left: 1.5rem; right: 1.5rem;
+  display: flex; gap: 6px; z-index: 25;
+}
+.cs-story-ctrl {
+  position: absolute; top: 0; bottom: 0; width: 50%;
+  z-index: 20; cursor: pointer;
+}
+.cs-story-ctrl--prev { left: 0; }
+.cs-story-ctrl--next { right: 0; }
+
+.cs-story-bar {
+  flex: 1; height: 3px; background: rgba(255,255,255,0.25);
+  border-radius: 2px; overflow: hidden;
+}
+.cs-story-fill {
+  height: 100%; width: 0%;
+  background: rgba(255,255,255,0.95);
+  border-radius: inherit;
+  transition: width 0.3s linear;
+}
+.cs-story-fill.animating {
+  animation: cs-fill var(--st-dur, 3s) linear forwards;
+}
+.cs-story-fill.done { width: 100%; }
+@keyframes cs-fill { from { width: 0%; } to { width: 100%; } }
+
+.cs-card__info {
+  flex: 4;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-container); /* Tom Bege/Off-White desejado */
+  position: relative;
+  z-index: 15;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-.carousel-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
-@media (max-width: 640px) {
-  .destaque-nav { display: none; }
-}
-.carousel-btn svg { width: 22px; height: 22px; }
-
-/* Hover Effect para o botão secundário Todos os Imóveis */
-.hero__actions .btn--secondary {
-  transition: all 0.3s ease;
-}
-.hero__actions .btn--secondary:hover {
-  background-color: #f5f0e8 !important;
-  color: #191919 !important;
-  border-color: #f5f0e8 !important;
 }
 
-/* Mobile: hero glass card com padding menor */
-@media (max-width: 640px) {
-  .hero-glass-card {
-    padding: 1.75rem !important;
-    margin: 0 !important;
-    border-radius: 16px !important;
-  }
-  .hero__title {
-    font-size: clamp(2rem, 9vw, 3rem) !important;
-  }
-  .hero__subtitle {
-    font-size: 0.9375rem;
-  }
-  /* Carrossel destaque ocupa mais do ecrã */
-  .destaque-section > div[style] {
-    padding: 0 0.75rem !important;
-  }
-  .carousel-clip {
-    height: clamp(340px, 60vh, 480px) !important;
-  }
-  /* Tipo carrosseis: nav some, cards mais largos */
-  .tipo-carousel-wrap { gap: 0; }
+@media(min-width: 800px) {
+  .cs-viewport { height: 480px; }
+  .cs-card { flex-direction: row; }
+  .cs-card__photo { flex: 5; height: 100%; }
+  .cs-card__info { flex: 4; padding: 3rem 2.5rem; }
+}
+@media(max-width: 640px) {
+  .cs-wrapper { padding: 0 1rem; }
+  .cs-nav-btn { display: none !important; } /* Mobile: sem setas, apenas swipe */
+  .cs-viewport { height: 600px; }
+  .cs-card__info { padding: 1.5rem; }
+  .cs-card__title { font-size: 1.3rem !important; margin-bottom: 1rem !important; }
+  .cs-stories-progress { top: 0.75rem; left: 0.75rem; right: 0.75rem; }
 }
 </style>
 
@@ -298,91 +310,278 @@
   const heroCard = document.querySelector('.hero-glass-card');
   const heroShine = document.querySelector('.hero-shine');
   
+  // Mobile detection - desativa interações 3D/shine no mobile
+  const isMobile = window.matchMedia('(max-width: 640px)').matches || ('ontouchstart' in window);
+  
   if (heroSection && heroCard && heroShine) {
-    let heroRaf;
-    heroSection.addEventListener('mousemove', (e) => {
-      cancelAnimationFrame(heroRaf);
-      heroRaf = requestAnimationFrame(() => {
-        const sectionRect = heroSection.getBoundingClientRect();
-        const heroX = e.clientX - sectionRect.left;
-        const heroY = e.clientY - sectionRect.top;
-        const xp = (heroX / sectionRect.width) * 100;
-        const yp = (heroY / sectionRect.height) * 100;
+    // Esconde o brilho no mobile
+    if (isMobile) {
+      heroShine.style.display = 'none';
+    } else {
+      let heroRaf;
+      heroSection.addEventListener('mousemove', (e) => {
+        cancelAnimationFrame(heroRaf);
+        heroRaf = requestAnimationFrame(() => {
+          const sectionRect = heroSection.getBoundingClientRect();
+          const heroX = e.clientX - sectionRect.left;
+          const heroY = e.clientY - sectionRect.top;
+          const xp = (heroX / sectionRect.width) * 100;
+          const yp = (heroY / sectionRect.height) * 100;
 
-        const tiltX = ((yp - 50) / 50) * -3; 
-        const tiltY = ((xp - 50) / 50) *  3;
-        heroCard.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+          const tiltX = ((yp - 50) / 50) * -3; 
+          const tiltY = ((xp - 50) / 50) *  3;
+          heroCard.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
 
-        const glassR = heroCard.getBoundingClientRect();
-        const gx = e.clientX - glassR.left;
-        const gy = e.clientY - glassR.top;
-        
-        heroShine.style.background = `radial-gradient(
-          400px circle at ${gx}px ${gy}px,
-          rgba(255,255,255,0.15) 0%,
-          rgba(255,255,255,0.02) 40%,
-          transparent 70%
-        )`;
+          const glassR = heroCard.getBoundingClientRect();
+          const gx = e.clientX - glassR.left;
+          const gy = e.clientY - glassR.top;
+          
+          heroShine.style.background = `radial-gradient(
+            400px circle at ${gx}px ${gy}px,
+            rgba(255,255,255,0.15) 0%,
+            rgba(255,255,255,0.02) 40%,
+            transparent 70%
+          )`;
+        });
       });
-    });
 
-    heroSection.addEventListener('mouseleave', () => {
-      cancelAnimationFrame(heroRaf);
-      heroShine.style.background = 'none';
-      heroCard.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
-    });
+      heroSection.addEventListener('mouseleave', () => {
+        cancelAnimationFrame(heroRaf);
+        heroShine.style.background = 'none';
+        heroCard.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+      });
+    }
   }
 
-  // 2. CAROUSEL CARDS — tilt 3D no <a> filho; clipping no wrapper .carousel-clip (sem transform)
-  document.querySelectorAll('.carousel-clip').forEach(clip => {
-    const card  = clip.querySelector('.carousel-card');
-    const light = card.querySelector('.lg-card__light');
-    const glass = card.querySelector('.lg-card__glass');
-    const shine = card.querySelector('.lg-card__glass-shine');
-    if (!card || !light || !glass || !shine) return;
+  // 2. CHARACTER SELECTOR & STORIES INTERNAL ENGINE
+  (function() {
+    const wrapper = document.querySelector('.cs-viewport');
+    if (!wrapper) return;
 
-    let raf;
-    clip.addEventListener('mousemove', (e) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const r  = clip.getBoundingClientRect();
-        const x  = e.clientX - r.left;
-        const y  = e.clientY - r.top;
-        const xp = (x / r.width)  * 100;
-        const yp = (y / r.height) * 100;
+    const slides = Array.from(wrapper.querySelectorAll('.cs-slide'));
+    let activeIdx = 0;
+    
+    const TIME_PER_STORY = 3000;
+    let storyTimer = null;
 
-        light.style.background = `radial-gradient(
-          520px circle at ${x}px ${y}px,
-          rgba(255,255,255,0.13) 0%,
-          rgba(255,255,255,0.04) 35%,
-          transparent 65%
-        )`;
-
-        const glassR = glass.getBoundingClientRect();
-        const gx = e.clientX - glassR.left;
-        const gy = e.clientY - glassR.top;
-        shine.style.background = `radial-gradient(
-          280px circle at ${gx}px ${gy}px,
-          rgba(255,255,255,0.22) 0%,
-          rgba(255,255,255,0.06) 40%,
-          transparent 70%
-        )`;
-
-        const tiltX = ((yp - 50) / 50) * -4;
-        const tiltY = ((xp - 50) / 50) *  4;
-        card.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.01)`;
-        card.style.transition = 'transform 0.08s linear';
+    function applySlideState() {
+      slides.forEach((s, idx) => {
+        if (idx === activeIdx) {
+          s.classList.add('cs-slide--active');
+        } else {
+          s.classList.remove('cs-slide--active');
+          // Reset story of inactive slides
+          resetStories(s);
+        }
       });
+      startStories(slides[activeIdx]);
+    }
+
+    function resetStories(slide) {
+      if (!slide) return;
+      const fills = slide.querySelectorAll('.cs-story-fill');
+      const layers = slide.querySelectorAll('.cs-photo-layer');
+      fills.forEach(f => {
+        f.classList.remove('animating', 'done');
+      });
+      layers.forEach((l, idx) => {
+        l.classList.toggle('cs-photo-layer--active', idx === 0);
+      });
+      slide.dataset.storyTick = '0';
+    }
+
+    function startStories(slide) {
+      clearInterval(storyTimer);
+      const totalPhotos = parseInt(slide.dataset.totalFotos || '1', 10);
+      if (totalPhotos <= 1) return; // if only 1 photo, no stories
+
+      let currentStory = parseInt(slide.dataset.storyTick || '0', 10);
+      const fills = slide.querySelectorAll('.cs-story-fill');
+      const layers = slide.querySelectorAll('.cs-photo-layer');
+      const ambients = slide.querySelectorAll('.cs-ambient-layer');
+      
+      // Setup current visualization before interval
+      fills.forEach((f, idx) => {
+        f.classList.remove('animating', 'done');
+        if (idx < currentStory) f.classList.add('done');
+        if (idx === currentStory) {
+          // Force Browser Reflow para reiniciar a animação CSS sem travar!
+          void f.offsetWidth;
+          f.classList.add('animating');
+        }
+      });
+      layers.forEach((l, idx) => {
+        l.classList.toggle('cs-photo-layer--active', idx === currentStory);
+      });
+      storyTimer = setInterval(() => {
+        fills[currentStory].classList.remove('animating');
+        fills[currentStory].classList.add('done');
+        layers[currentStory].classList.remove('cs-photo-layer--active');
+        
+        currentStory++;
+        if (currentStory >= totalPhotos) currentStory = 0; // loop back
+        slide.dataset.storyTick = currentStory;
+        
+        if (currentStory === 0) fills.forEach(f => f.classList.remove('done'));
+        
+        // Force reflow
+        void fills[currentStory].offsetWidth;
+        fills[currentStory].classList.add('animating');
+        layers[currentStory].classList.add('cs-photo-layer--active');
+      }, TIME_PER_STORY);
+    }
+
+    // Nav Setas (Property Change)
+    const btnPrev = document.getElementById('csPrev');
+    const btnNext = document.getElementById('csNext');
+    
+    function nextProperty() {
+      activeIdx = (activeIdx + 1) % slides.length;
+      applySlideState();
+    }
+    function prevProperty() {
+      activeIdx = (activeIdx - 1 + slides.length) % slides.length;
+      applySlideState();
+    }
+
+    if (btnPrev) btnPrev.addEventListener('click', prevProperty);
+    if (btnNext) btnNext.addEventListener('click', nextProperty);
+
+    // Initial kick-off
+    applySlideState();
+    
+    // Pause on mouse over
+    const slideWrappers = document.querySelectorAll('.cs-slide');
+    let rafTilt;
+    let observer;
+
+    // IntersectionObserver guarantees the animation ONLY plays when the user scrolls to it!
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        startStories(slides[activeIdx]);
+      } else {
+        clearInterval(storyTimer);
+      }
+    }, { threshold: 0.3 });
+    observer.observe(wrapper);
+
+    // MOBILE: Touch Swipe para trocar destaques arrastando
+    if (isMobile) {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchEndX = 0;
+      const SWIPE_THRESHOLD = 50;
+
+      wrapper.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      wrapper.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diffX = touchStartX - touchEndX;
+        const diffY = Math.abs(touchStartY - e.changedTouches[0].screenY);
+        
+        // Só troca slide se o swipe for mais horizontal que vertical
+        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > diffY) {
+          if (diffX > 0) {
+            nextProperty(); // Swipe left = próximo
+          } else {
+            prevProperty(); // Swipe right = anterior
+          }
+        }
+      }, { passive: true });
+    }
+
+    slideWrappers.forEach(slideWrap => {
+      const c = slideWrap.querySelector('.cs-card');
+      if (!c) return;
+
+      // Pause stories on hover (desktop only)
+      if (!isMobile) {
+        slideWrap.addEventListener('mouseenter', () => clearInterval(storyTimer));
+        slideWrap.addEventListener('mouseleave', () => {
+          startStories(slides[activeIdx]);
+          // Reset tilt
+          cancelAnimationFrame(rafTilt);
+          const shine = c.querySelector('.cs-card__shine');
+          if (shine) shine.style.background = 'none';
+          c.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
+          c.style.transition = 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
+        });
+      }
+
+      // Setup Instagram Click Zones (Next/Prev Photo)
+      const ctrlPrev = slideWrap.querySelector('.cs-story-ctrl--prev');
+      const ctrlNext = slideWrap.querySelector('.cs-story-ctrl--next');
+      const infoQuadrant = slideWrap.querySelector('.cs-card__info');
+      
+      if (infoQuadrant) {
+        infoQuadrant.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetUrl = infoQuadrant.getAttribute('data-target-url');
+          if (targetUrl) window.location.href = targetUrl;
+        });
+      }
+
+      if (ctrlPrev) {
+        ctrlPrev.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          let total = parseInt(slideWrap.dataset.totalFotos || '1', 10);
+          if (total <= 1) return;
+          let curr = parseInt(slideWrap.dataset.storyTick || '0', 10);
+          curr = curr - 1;
+          if (curr < 0) curr = total - 1;
+          slideWrap.dataset.storyTick = curr.toString();
+          startStories(slideWrap);
+        });
+      }
+      
+      if (ctrlNext) {
+        ctrlNext.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          let total = parseInt(slideWrap.dataset.totalFotos || '1', 10);
+          if (total <= 1) return;
+          let curr = parseInt(slideWrap.dataset.storyTick || '0', 10);
+          curr = (curr + 1) % total;
+          slideWrap.dataset.storyTick = curr.toString();
+          startStories(slideWrap);
+        });
+      }
+
+      // 3D Tilt + Shine - APENAS Desktop (previne interações touch indesejadas)
+      if (!isMobile) {
+        slideWrap.addEventListener('mousemove', (e) => {
+          cancelAnimationFrame(rafTilt);
+          rafTilt = requestAnimationFrame(() => {
+            const r = slideWrap.getBoundingClientRect();
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+            const xp = (x / r.width) * 100;
+            const yp = (y / r.height) * 100;
+
+            const tiltX = ((yp - 50) / 50) * -4;
+            const tiltY = ((xp - 50) / 50) * 4;
+            
+            c.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+            c.style.transition = 'transform 0.1s linear';
+
+            const shine = c.querySelector('.cs-card__shine');
+            if (shine) {
+               shine.style.background = `radial-gradient(600px circle at ${x}px ${y}px, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.01) 40%, transparent 80%)`;
+            }
+          });
+        });
+      } else {
+        // No mobile, esconde o shine dos cards de destaque
+        const shine = c.querySelector('.cs-card__shine');
+        if (shine) shine.style.display = 'none';
+      }
     });
 
-    clip.addEventListener('mouseleave', () => {
-      cancelAnimationFrame(raf);
-      light.style.background = 'none';
-      shine.style.background = 'none';
-      card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)';
-      card.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
-    });
-  });
+  })();
 })();
 </script>
 
@@ -465,7 +664,13 @@
                 <% if (item.area_total) { %>
                 <span class="mini-spec">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
-                  <strong><%= Math.round(item.area_total) %>m²</strong>
+                  <strong>
+                    <% if (item.unidade_area === 'ha') { %>
+                      <%= (item.area_total / 10000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) %> ha
+                    <% } else { %>
+                      <%= Math.round(item.area_total).toLocaleString('pt-BR') %>m²
+                    <% } %>
+                  </strong>
                 </span>
                 <% } %>
                 <% if (item.vagas_garagem > 0) { %>
@@ -519,14 +724,6 @@
 <%- include('partials/footer') %>
 
 <script>
-function scrollCarousel(dir) {
-  const container = document.getElementById('destaquesContainer');
-  if (container) {
-    const cardWidth = container.offsetWidth;
-    container.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
-  }
-}
-
 function scrollTipo(tipo, dir) {
   const container = document.getElementById('carousel-' + tipo);
   if (container) {
