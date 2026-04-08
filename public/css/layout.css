@@ -537,14 +537,17 @@
 
   /* Nossos Imóveis - remove fundo preto no mobile */
   .imoveis-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface) !important;
+    border-bottom: 1px solid var(--outline-variant) !important;
   }
   .imoveis-title {
-    color: var(--on-surface);
+    color: var(--on-surface) !important;
   }
   .imoveis-subtitle {
-    color: var(--on-surface-variant);
+    color: var(--on-surface-variant) !important;
+  }
+  .section__eyebrow {
+    color: var(--primary) !important;
   }
 
   /* Footer simplificado */
