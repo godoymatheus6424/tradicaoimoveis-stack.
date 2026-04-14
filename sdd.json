@@ -1,0 +1,461 @@
+{
+  "project": {
+    "name": "Tradição Imóveis",
+    "version": "1.0.0",
+    "type": "Full-stack Node.js/Express Real Estate Web Application",
+    "date": "2026-04-13",
+    "description": "Plataforma web completa para imobiliária brasileira com site público, painel admin, API JSON e integração com Supabase Storage."
+  },
+
+  "stack": {
+    "runtime": "Node.js",
+    "framework": "Express.js v5.2.1",
+    "template_engine": "EJS v5.0.1",
+    "database": "PostgreSQL (Supabase-hosted)",
+    "query_builder": "Knex.js v3.2.6",
+    "pg_driver": "pg v8.20.0",
+    "auth": {
+      "password_hashing": "bcrypt v6.0.0",
+      "session": "express-session v1.19.0",
+      "session_store": "connect-pg-simple v10.0.0",
+      "rate_limiting": "express-rate-limit v8.3.2"
+    },
+    "file_handling": {
+      "upload": "multer v2.1.1",
+      "image_processing": "sharp v0.34.5",
+      "cloud_storage": "@supabase/supabase-js v2.101.1",
+      "doc_parsing": ["mammoth v1.12.0", "pdf-parse v1.1.4"]
+    },
+    "utilities": {
+      "env": "dotenv v17.3.1",
+      "uuid": "uuid v13.0.0",
+      "mime": "mime-types v3.0.2",
+      "method_override": "method-override v3.0.0"
+    },
+    "dev": "nodemon v3.1.14"
+  },
+
+  "directory_structure": {
+    "root": [
+      "server.js",
+      "db.js",
+      "knexfile.js",
+      "supabase.js",
+      "package.json",
+      ".env",
+      ".env.example",
+      "CLAUDE.md",
+      "sdd.json"
+    ],
+    "middleware": ["auth.js", "upload.js"],
+    "routes": ["public.js", "auth.js", "admin.js", "api.js"],
+    "migrations": [
+      "001_create_admin_users.js",
+      "002_create_categorias.js",
+      "003_create_imoveis.js",
+      "004_create_imovel_fotos.js",
+      "005_create_contatos.js",
+      "006_alter_imoveis_add_fields.js",
+      "007_create_condominios.js",
+      "008_alter_imoveis_add_andar_apto.js"
+    ],
+    "seeds": ["001_admin_default.js", "002_imoveis_data.js"],
+    "views": {
+      "partials": ["head.ejs", "header.ejs", "footer.ejs", "admin-sidebar.ejs"],
+      "public": ["home.ejs", "imoveis.ejs", "imovel-detalhes.ejs", "contato.ejs", "sobre.ejs", "404.ejs"],
+      "admin": ["login.ejs", "dashboard.ejs", "imoveis-lista.ejs", "imovel-form.ejs", "condominios-lista.ejs", "condominio-form.ejs", "contatos.ejs"]
+    },
+    "public": {
+      "css": ["variables.css", "base.css", "layout.css", "components.css", "pages.css", "admin.css"],
+      "js": ["main.js", "imoveis.js", "galeria.js", "contato.js", "admin.js"],
+      "images": ["logo.png"],
+      "uploads": ["imoveis/"]
+    }
+  },
+
+  "database": {
+    "tables": {
+      "admin_users": {
+        "description": "Credenciais de acesso ao painel admin",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "nome": { "type": "VARCHAR(100)", "constraints": ["NOT NULL"] },
+          "email": { "type": "VARCHAR(200)", "constraints": ["UNIQUE", "NOT NULL"] },
+          "senha": { "type": "VARCHAR(255)", "constraints": ["NOT NULL"], "note": "bcrypt hash" },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "categorias": {
+        "description": "Categorias de imóveis (Residencial, Comercial, etc.)",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "nome": { "type": "VARCHAR(100)", "constraints": ["NOT NULL"] },
+          "slug": { "type": "VARCHAR(100)", "constraints": ["UNIQUE", "NOT NULL"] },
+          "subtitulo": { "type": "VARCHAR(50)" },
+          "imagem_url": { "type": "VARCHAR(500)" },
+          "ordem": { "type": "INTEGER", "default": 0 },
+          "ativo": { "type": "BOOLEAN", "default": true }
+        }
+      },
+      "imoveis": {
+        "description": "Listagens de imóveis (migrations 003 + 006 + 008)",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "titulo": { "type": "VARCHAR(200)", "constraints": ["NOT NULL"] },
+          "descricao": { "type": "TEXT" },
+          "tipo": { "type": "VARCHAR(50)", "constraints": ["NOT NULL"], "examples": ["Apartamento", "Casa", "Sobrado", "Terreno"] },
+          "finalidade": { "type": "VARCHAR(20)", "default": "venda", "options": ["venda", "aluguel"] },
+          "preco": { "type": "DECIMAL(14,2)", "note": "NULL = Consulte o Valor" },
+          "area_total": { "type": "DECIMAL(10,2)" },
+          "area_construida": { "type": "DECIMAL(10,2)" },
+          "unidade_area": { "type": "VARCHAR(20)", "default": "m2", "options": ["m2", "ha"] },
+          "quartos": { "type": "INTEGER", "default": 0 },
+          "suites": { "type": "INTEGER", "default": 0 },
+          "banheiros": { "type": "INTEGER", "default": 0 },
+          "vagas_garagem": { "type": "INTEGER", "default": 0 },
+          "andar": { "type": "VARCHAR(20)", "added_in": "migration_008" },
+          "apto": { "type": "VARCHAR(20)", "added_in": "migration_008" },
+          "endereco": { "type": "VARCHAR(300)" },
+          "bairro": { "type": "VARCHAR(100)" },
+          "cidade": { "type": "VARCHAR(100)", "default": "Maringá" },
+          "estado": { "type": "VARCHAR(2)", "default": "PR" },
+          "cep": { "type": "VARCHAR(10)" },
+          "categoria_id": { "type": "INTEGER", "constraints": ["FK → categorias.id"] },
+          "destaque": { "type": "BOOLEAN", "default": false },
+          "ordem_destaque": { "type": "INTEGER", "note": "Ordena os 3 destaques da home" },
+          "novo": { "type": "BOOLEAN", "default": false },
+          "ativo": { "type": "BOOLEAN", "default": true },
+          "condominio": { "type": "VARCHAR(200)", "added_in": "migration_006" },
+          "url_original": { "type": "VARCHAR(500)", "added_in": "migration_006" },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" },
+          "updated_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "imovel_fotos": {
+        "description": "Fotos de imóveis (Supabase CDN ou local)",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "imovel_id": { "type": "INTEGER", "constraints": ["FK → imoveis.id", "ON DELETE CASCADE"] },
+          "filename": { "type": "VARCHAR(255)", "constraints": ["NOT NULL"] },
+          "path": { "type": "VARCHAR(500)", "constraints": ["NOT NULL"], "note": "URL Supabase ou path local" },
+          "principal": { "type": "BOOLEAN", "default": false },
+          "ordem": { "type": "INTEGER", "default": 0 },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "condominios": {
+        "description": "Empreendimentos/condomínios",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "nome": { "type": "VARCHAR(255)", "constraints": ["NOT NULL"] },
+          "valor": { "type": "DECIMAL(12,2)", "default": 0 },
+          "descricao": { "type": "TEXT" },
+          "caracteristicas": { "type": "TEXT" },
+          "endereco": { "type": "VARCHAR(255)" },
+          "bairro": { "type": "VARCHAR(100)" },
+          "cidade": { "type": "VARCHAR(100)", "default": "Maringá" },
+          "estado": { "type": "VARCHAR(2)", "default": "PR" },
+          "cep": { "type": "VARCHAR(10)" },
+          "ativo": { "type": "BOOLEAN", "default": true },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" },
+          "updated_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "condominio_fotos": {
+        "description": "Fotos de condomínios",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "condominio_id": { "type": "INTEGER", "constraints": ["FK → condominios.id", "ON DELETE CASCADE"] },
+          "filename": { "type": "VARCHAR(255)", "constraints": ["NOT NULL"] },
+          "path": { "type": "VARCHAR(500)", "constraints": ["NOT NULL"] },
+          "principal": { "type": "BOOLEAN", "default": false },
+          "ordem": { "type": "INTEGER", "default": 0 },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "contatos": {
+        "description": "Submissões do formulário de contato",
+        "columns": {
+          "id": { "type": "SERIAL", "constraints": ["PRIMARY KEY"] },
+          "imovel_id": { "type": "INTEGER", "constraints": ["FK → imoveis.id", "ON DELETE SET NULL"] },
+          "nome": { "type": "VARCHAR(100)", "constraints": ["NOT NULL"] },
+          "email": { "type": "VARCHAR(200)", "constraints": ["NOT NULL"] },
+          "telefone": { "type": "VARCHAR(20)" },
+          "mensagem": { "type": "TEXT" },
+          "lido": { "type": "BOOLEAN", "default": false },
+          "created_at": { "type": "TIMESTAMP", "default": "NOW()" }
+        }
+      },
+      "session": {
+        "description": "Sessões Express (gerenciada pelo connect-pg-simple)",
+        "columns": {
+          "sid": { "type": "VARCHAR(255)", "constraints": ["PRIMARY KEY"] },
+          "sess": { "type": "JSON", "constraints": ["NOT NULL"] },
+          "expire": { "type": "TIMESTAMP", "constraints": ["NOT NULL"] }
+        }
+      }
+    },
+    "relationships": [
+      { "from": "imoveis.categoria_id", "to": "categorias.id", "type": "many-to-one" },
+      { "from": "imovel_fotos.imovel_id", "to": "imoveis.id", "type": "many-to-one", "on_delete": "CASCADE" },
+      { "from": "condominio_fotos.condominio_id", "to": "condominios.id", "type": "many-to-one", "on_delete": "CASCADE" },
+      { "from": "contatos.imovel_id", "to": "imoveis.id", "type": "many-to-one", "on_delete": "SET NULL" }
+    ]
+  },
+
+  "routes": {
+    "public": [
+      { "method": "GET", "path": "/", "view": "home.ejs", "data": ["destaques(3)", "apartamentos(8)", "casas(8)", "comerciais(8)", "categorias"] },
+      { "method": "GET", "path": "/imoveis", "view": "imoveis.ejs", "data": ["categorias", "filtros"] },
+      { "method": "GET", "path": "/imovel/:id", "view": "imovel-detalhes.ejs", "data": ["imovel", "fotos", "relacionados(3)"] },
+      { "method": "GET", "path": "/contato", "view": "contato.ejs", "data": ["imoveis", "success"] },
+      { "method": "GET", "path": "/sobre", "view": "sobre.ejs", "data": [] }
+    ],
+    "auth": [
+      { "method": "GET", "path": "/admin/login", "description": "Renderiza form de login" },
+      { "method": "POST", "path": "/admin/login", "description": "Valida bcrypt, cria sessão", "rate_limit": "5 tentativas / 15 min" },
+      { "method": "GET", "path": "/admin/logout", "description": "Destrói sessão, redireciona" }
+    ],
+    "admin": [
+      { "method": "GET", "path": "/admin/dashboard", "auth": true, "description": "Métricas + destaques" },
+      { "method": "GET", "path": "/admin/imoveis", "auth": true, "description": "Lista imóveis" },
+      { "method": "GET", "path": "/admin/imoveis/novo", "auth": true, "description": "Form criação" },
+      { "method": "POST", "path": "/admin/imoveis", "auth": true, "description": "Cria imóvel + upload fotos (Sharp → WebP → Supabase)" },
+      { "method": "GET", "path": "/admin/imoveis/:id/editar", "auth": true, "description": "Form edição" },
+      { "method": "PUT", "path": "/admin/imoveis/:id", "auth": true, "description": "Atualiza imóvel" },
+      { "method": "DELETE", "path": "/admin/imoveis/:id", "auth": true, "description": "Exclui + limpa fotos Supabase" },
+      { "method": "POST", "path": "/admin/imoveis/bulk-delete", "auth": true, "description": "Excluir múltiplos" },
+      { "method": "PUT", "path": "/admin/imoveis/:id/destaque", "auth": true, "description": "Toggle destaque (máx 3)" },
+      { "method": "PUT", "path": "/admin/imoveis/:id/ativo", "auth": true, "description": "Toggle ativo/inativo" },
+      { "method": "POST", "path": "/admin/imoveis/reorder-destaques", "auth": true, "description": "Reordenar via drag-drop" },
+      { "method": "POST", "path": "/admin/imoveis/substituir-destaque", "auth": true, "description": "Trocar destaque mantendo posição" },
+      { "method": "GET", "path": "/admin/imoveis-search", "auth": true, "description": "Autocomplete busca (max 10)" },
+      { "method": "POST", "path": "/admin/imoveis/parse-doc", "auth": true, "description": "Extrair campos de PDF/DOCX" },
+      { "method": "POST", "path": "/admin/imoveis/:id/fotos", "auth": true, "description": "Adicionar fotos" },
+      { "method": "DELETE", "path": "/admin/fotos/:id", "auth": true, "description": "Excluir foto individual" },
+      { "method": "PUT", "path": "/admin/fotos/:id/principal", "auth": true, "description": "Definir foto principal" },
+      { "method": "GET", "path": "/admin/condominios", "auth": true, "description": "Lista condomínios" },
+      { "method": "GET", "path": "/admin/condominios/novo", "auth": true, "description": "Form novo condomínio" },
+      { "method": "POST", "path": "/admin/condominios", "auth": true, "description": "Cria condomínio" },
+      { "method": "GET", "path": "/admin/condominios/:id/editar", "auth": true, "description": "Form edição condomínio" },
+      { "method": "PUT", "path": "/admin/condominios/:id", "auth": true, "description": "Atualiza condomínio" },
+      { "method": "DELETE", "path": "/admin/condominios/:id", "auth": true, "description": "Exclui condomínio" },
+      { "method": "DELETE", "path": "/admin/condominio-fotos/:id", "auth": true, "description": "Excluir foto de condomínio" },
+      { "method": "GET", "path": "/admin/contatos", "auth": true, "description": "Inbox de contatos" },
+      { "method": "PUT", "path": "/admin/contatos/:id/lido", "auth": true, "description": "Marcar como lido" }
+    ],
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/imoveis",
+        "description": "Busca com filtros e paginação",
+        "query_params": ["tipo", "finalidade", "preco_min", "preco_max", "quartos", "cidade", "bairro", "categoria_id", "page", "limit"],
+        "response": { "success": true, "data": "array", "pagination": { "total": "number", "page": "number", "limit": "number", "pages": "number" } }
+      },
+      {
+        "method": "GET",
+        "path": "/api/imoveis/destaques",
+        "description": "Destaques para home",
+        "response": { "success": true, "data": "array" }
+      },
+      {
+        "method": "GET",
+        "path": "/api/imoveis/:id",
+        "description": "Detalhes + fotos de um imóvel",
+        "response": { "success": true, "data": "object com fotos[]" }
+      },
+      {
+        "method": "GET",
+        "path": "/api/categorias",
+        "description": "Lista categorias ativas",
+        "response": { "success": true, "data": "array" }
+      },
+      {
+        "method": "POST",
+        "path": "/api/contatos",
+        "description": "Submissão de formulário de contato",
+        "body": { "nome": "string", "email": "string", "telefone": "string", "imovel_id": "number|null", "mensagem": "string" },
+        "response": { "success": true, "message": "string" }
+      }
+    ]
+  },
+
+  "design_system": {
+    "colors": {
+      "primary": "#690008",
+      "secondary": "#6b6560",
+      "surface": "#faf8f5",
+      "surface_container_lowest": "#ffffff",
+      "on_surface": "#1e1c18",
+      "on_surface_variant": "#4d4b47",
+      "inverse_surface": "#1e1c18",
+      "inverse_on_surface": "#f0ece4",
+      "error": "#ba1a1a",
+      "outline": "#7d7b77",
+      "outline_variant": "#cdc9c4"
+    },
+    "typography": {
+      "display": { "font": "Space Grotesk", "weights": [300, 400, 500, 600, 700], "size_token": "--display-lg: 3.75rem" },
+      "body": { "font": "Inter", "weights": [300, 400, 500, 600], "size_token": "--body-md: 1rem" }
+    },
+    "spacing": {
+      "--space-xs": "0.25rem",
+      "--space-sm": "0.5rem",
+      "--space-md": "1rem",
+      "--space-lg": "1.5rem",
+      "--space-xl": "2rem",
+      "--space-2xl": "3rem",
+      "--space-3xl": "4.5rem",
+      "--space-4xl": "7rem"
+    },
+    "breakpoints": {
+      "tablet": "1024px",
+      "mobile": "768px",
+      "mobile_sm": "640px"
+    },
+    "css_files": {
+      "variables.css": "Design tokens (cores, espaços, fontes)",
+      "base.css": "Reset global, defaults semânticos",
+      "layout.css": "Container, grid, nav, footer, utility bar",
+      "components.css": "Botões, cards, forms, badges, drawer",
+      "pages.css": "Hero, filtros, galeria, destaques, detalhes (~1400 linhas)",
+      "admin.css": "Sidebar, dashboard, tabelas, modais admin (~770 linhas)"
+    }
+  },
+
+  "security": {
+    "password_hashing": "bcrypt 10 rounds",
+    "session": {
+      "store": "PostgreSQL (connect-pg-simple)",
+      "flags": ["httpOnly", "SameSite=strict"],
+      "max_age_hours": 24,
+      "secure_in_production": true
+    },
+    "sql_injection": "Queries parametrizadas via Knex (? placeholders)",
+    "brute_force": "Rate limit: 5 tentativas por 15 min por IP no login",
+    "file_upload": {
+      "whitelist": [".jpg", ".jpeg", ".png", ".webp"],
+      "max_size_mb": 50,
+      "max_files": 50
+    },
+    "xss": "EJS auto-escapa variáveis por padrão",
+    "rls": "Row-Level Security ativo em todas as tabelas Supabase",
+    "image_processing": "Sharp remove EXIF e converte para WebP"
+  },
+
+  "supabase_integration": {
+    "bucket": "fotos",
+    "path_patterns": {
+      "imoveis": "imoveis/{uuid}.webp",
+      "condominios": "condominios/{uuid}.webp"
+    },
+    "functions": {
+      "uploadToSupabase": "localPath, destPath, mimetype → URL CDN pública",
+      "deleteFromSupabase": "pathOrUrl → remove arquivo do bucket"
+    },
+    "fallback": "Salva em /public/uploads/imoveis/ se Supabase indisponível",
+    "image_processing_pipeline": "Upload → Sharp (auto-rotate + resize 1280x960 + WebP 78%) → Supabase"
+  },
+
+  "key_features": [
+    { "name": "Stories Carousel (Destaques)", "description": "Carousel estilo Instagram com barra de progresso animada, swipe e navegação entre fotos do mesmo imóvel" },
+    { "name": "Glass-morphism Hero", "description": "backdrop-filter blur(16px) com overlay rgba semi-transparente no card do hero" },
+    { "name": "Header Expansível", "description": "Na home, header maior (logo 72px, padding 2.75rem) que encolhe suavemente após scroll via .site-header--expanded" },
+    { "name": "Hero Search Form", "description": "Filtros customizados (Finalidade, Tipo, Categoria) no hero que passam params via URL para /imoveis" },
+    { "name": "Filtros AJAX", "description": "Busca dinâmica sem reload via fetch /api/imoveis com paginação e URLSearchParams" },
+    { "name": "PDF/DOCX Parser", "description": "Extrai campos do imóvel (tipo, finalidade, quartos, área, preço, localização) via regex de arquivos enviados no admin" },
+    { "name": "Drag-drop Destaques", "description": "Reordenação dos 3 destaques da home por arrastar no painel admin" },
+    { "name": "Destaques Máx 3", "description": "Lógica que impede mais de 3 imóveis em destaque simultâneo" },
+    { "name": "Substituição de Destaque", "description": "Troca um destaque por outro mantendo a posição na ordem" },
+    { "name": "WebP Auto-convert", "description": "Sharp processa todo upload para WebP otimizado (50-70% menor)" },
+    { "name": "WhatsApp FAB", "description": "Botão flutuante fixo em todas as páginas públicas" },
+    { "name": "Drawer Mobile", "description": "Menu lateral com overlay backdrop e animação CSS de 0.3s" },
+    { "name": "Lightbox Galeria", "description": "Modal fullscreen com navegação por setas, teclado e swipe touch" },
+    { "name": "Custom Dropdowns", "description": "Selects customizados (.hs-select) no hero com animação e hidden input para submit nativo" }
+  ],
+
+  "data_flows": {
+    "property_creation": [
+      "Admin preenche form (imovel-form.ejs)",
+      "POST /admin/imoveis com multipart/form-data",
+      "Validação server-side (titulo, tipo, finalidade obrigatórios)",
+      "INSERT INTO imoveis",
+      "Para cada foto: Sharp optimize → WebP → uploadToSupabase() → INSERT INTO imovel_fotos",
+      "Redirect /admin/imoveis"
+    ],
+    "public_search": [
+      "Usuário seleciona filtros na página /imoveis",
+      "JS monta URLSearchParams",
+      "fetch /api/imoveis?tipo=Casa&finalidade=venda...",
+      "Backend constrói WHERE dinâmico com params parametrizados",
+      "Retorna JSON com paginação",
+      "JS renderiza cards no grid"
+    ],
+    "contact_submission": [
+      "Usuário preenche formulário em /contato ou /imovel/:id",
+      "AJAX POST /api/contatos",
+      "Validação email regex",
+      "INSERT INTO contatos",
+      "Resposta { success: true }",
+      "UI exibe mensagem de sucesso",
+      "Admin vê contador de não lidos no dashboard"
+    ],
+    "destaque_toggle": [
+      "Admin clica ★ no painel",
+      "PUT /admin/imoveis/:id/destaque",
+      "Backend conta destaques atuais",
+      "Se >= 3: retorna 400",
+      "Se < 3: SET destaque=true, assign ordem_destaque",
+      "Home atualiza carousel na próxima visita"
+    ]
+  },
+
+  "environment": {
+    "variables": {
+      "DB_HOST": "Host PostgreSQL Supabase",
+      "DB_PORT": "6543 (connection pooler)",
+      "DB_USER": "postgres.{project_id}",
+      "DB_PASS": "Senha do banco",
+      "DB_NAME": "postgres",
+      "DB_SSL": "true",
+      "SESSION_SECRET": "Chave secreta para sessões",
+      "PORT": "3000",
+      "NODE_ENV": "development | production",
+      "SUPABASE_URL": "https://{project_id}.supabase.co",
+      "SUPABASE_KEY": "Chave de serviço Supabase"
+    },
+    "commands": {
+      "install": "npm install",
+      "migrate": "npx knex migrate:latest",
+      "seed": "npx knex seed:run",
+      "dev": "npm run dev (nodemon)",
+      "start": "npm start (node server.js)"
+    }
+  },
+
+  "complexity": {
+    "total_lines_estimated": 12000,
+    "files_by_size": [
+      { "file": "public/css/pages.css", "lines": 1400 },
+      { "file": "routes/admin.js", "lines": 870 },
+      { "file": "public/css/admin.css", "lines": 773 },
+      { "file": "public/css/components.css", "lines": 625 },
+      { "file": "public/css/layout.css", "lines": 584 },
+      { "file": "public/js/imoveis.js", "lines": 143 },
+      { "file": "public/js/admin.js", "lines": 165 }
+    ]
+  },
+
+  "production_checklist": [
+    "HTTPS habilitado (SSL via nginx ou Cloudflare)",
+    "secure: true nos cookies de sessão",
+    "SESSION_SECRET forte e único (não o padrão)",
+    "NODE_ENV=production",
+    "Backups automáticos PostgreSQL",
+    "Monitoramento de erros (Sentry ou similar)",
+    "CDN para assets estáticos",
+    "Email de notificação para novos contatos",
+    "Política de senhas para admin",
+    "Testar RLS Supabase em produção"
+  ]
+}

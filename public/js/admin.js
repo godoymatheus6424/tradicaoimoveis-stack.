@@ -6,20 +6,19 @@
 function previewFotos(input) {
   const container = document.getElementById('previewNovos');
   if (!container) return;
-
+  // Usa createObjectURL em vez de FileReader+Base64 — instantâneo, sem ler o arquivo inteiro
   Array.from(input.files).forEach((file, i) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const div = document.createElement('div');
-      div.className = 'upload-preview__item';
-      div.innerHTML = `
-        <img src="${e.target.result}" alt="Preview ${i + 1}">
-      `;
-      container.appendChild(div);
-    };
-    reader.readAsDataURL(file);
+    // Evita duplicar previews já gerados
+    if (document.getElementById(`preview-new-${i}`)) return;
+    const url = URL.createObjectURL(file);
+    const div = document.createElement('div');
+    div.className = 'upload-preview__item';
+    div.id = `preview-new-${i}`;
+    div.innerHTML = `<img src="${url}" alt="Preview ${i + 1}">`;
+    container.appendChild(div);
   });
 }
+
 
 // =====================
 // DRAG AND DROP

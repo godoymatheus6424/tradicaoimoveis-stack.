@@ -40,19 +40,15 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
         <div>
           <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);">Imóveis em Destaque</h3>
-          <p style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:4px;">Arraste para reordenar. O primeiro da esquerda é a Capa Principal do site.</p>
+          <p style="font-size:var(--label-sm);color:var(--on-surface-variant);margin-top:4px;">Arraste para reordenar a ordem de exibição dos destaques.</p>
         </div>
         <a href="/admin/imoveis/novo" class="btn btn--primary btn--sm">+ Novo Imóvel</a>
       </div>
 
       <div class="destaques-grid" id="destaquesGrid">
         <% destaques.forEach(function(im, index) { %>
-        <div class="destaque-card <%= index === 0 ? 'destaque-card--capa' : '' %>" draggable="true" data-id="<%= im.id %>">
-          <% if (index === 0) { %>
-            <div class="destaque-card__badge">👑 Capa Principal</div>
-          <% } else { %>
-            <div class="destaque-card__num"><%= index + 1 %></div>
-          <% } %>
+        <div class="destaque-card" draggable="true" data-id="<%= im.id %>">
+          <div class="destaque-card__num"><%= index + 1 %></div>
           <div class="destaque-card__thumb">
             <% if (im.foto_principal) { %>
               <img src="<%= im.foto_principal %>" alt="">
@@ -65,8 +61,8 @@
             <div class="destaque-card__price"><%= im.preco_formatado %></div>
           </div>
           <div class="destaque-card__actions">
-            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;" onclick="openSubModal(<%= im.id %>)">Substituir</button>
-            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;background:rgba(186, 26, 26, 0.05);color:var(--error);" onclick="removerDestaque(<%= im.id %>)">Remover</button>
+            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;" onclick="openSubModal('<%= im.id %>')">Substituir</button>
+            <button class="btn btn--secondary btn--sm" style="width:100%;font-size:11px;padding:6px;font-weight:700;background:rgba(186, 26, 26, 0.05);color:var(--error);" onclick="removerDestaque('<%= im.id %>')">Remover</button>
           </div>
         </div>
         <% }) %>

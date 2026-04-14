@@ -242,6 +242,7 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
     banheiros, vagas_garagem, endereco, bairro,
     cidade, estado, cep, categoria_id,
     destaque, novo, andar, apto, unidade_area,
+    valor_condominio, sem_condominio,
   } = req.body;
 
   const errors = [];
@@ -263,11 +264,13 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
   }
 
   try {
+    const finalCondominio = sem_condominio === 'on' ? null : (parseFloat(valor_condominio) || null);
+
     const result = await db.raw(
       `INSERT INTO imoveis (titulo, descricao, tipo, finalidade, preco, area_total, area_construida,
         quartos, suites, banheiros, vagas_garagem, endereco, bairro, cidade, estado, cep,
-        categoria_id, destaque, novo, ativo, andar, apto, unidade_area, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,?,?,?,NOW())
+        categoria_id, destaque, novo, ativo, andar, apto, unidade_area, valor_condominio, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,true,?,?,?,?,NOW())
        RETURNING id`,
       [
         titulo, descricao || null, tipo, finalidade, parseFloat(preco),
@@ -279,6 +282,7 @@ router.post('/imoveis', isAuthenticated, (req, res, next) => {
         categoria_id || null,
         destaque === 'on', novo === 'on',
         andar || null, apto || null, unidade_area || 'm2',
+        finalCondominio,
       ]
     );
     const imovelId = result.rows[0].id;
@@ -356,6 +360,7 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
     banheiros, vagas_garagem, endereco, bairro,
     cidade, estado, cep, categoria_id,
     destaque, novo, ativo, andar, apto, unidade_area,
+    valor_condominio, sem_condominio,
   } = req.body;
 
   const errors = [];
@@ -379,11 +384,13 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
   }
 
   try {
+    const finalCondominio = sem_condominio === 'on' ? null : (parseFloat(valor_condominio) || null);
+
     await db.raw(
       `UPDATE imoveis SET titulo=?, descricao=?, tipo=?, finalidade=?, preco=?,
         area_total=?, area_construida=?, quartos=?, suites=?, banheiros=?,
         vagas_garagem=?, endereco=?, bairro=?, cidade=?, estado=?, cep=?,
-        categoria_id=?, destaque=?, novo=?, ativo=?, andar=?, apto=?, unidade_area=?, updated_at=NOW()
+        categoria_id=?, destaque=?, novo=?, ativo=?, andar=?, apto=?, unidade_area=?, valor_condominio=?, updated_at=NOW()
        WHERE id=?`,
       [
         titulo, descricao || null, tipo, finalidade || 'venda', parseFloat(preco),
@@ -395,6 +402,7 @@ router.put('/imoveis/:id', isAuthenticated, (req, res, next) => {
         categoria_id || null,
         destaque === 'on', novo === 'on', ativo === 'on',
         andar || null, apto || null, unidade_area || 'm2',
+        finalCondominio,
         id,
       ]
     );
@@ -680,191 +688,99 @@ router.put('/contatos/:id/lido', isAuthenticated, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════
-//  CONDOMÍNIOS
-// ═══════════════════════════════════════════
+// =====================
+// BANNERS
+// =====================
 
-const condUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '../public/uploads/condominios')),
-    filename: (req, file, cb) => {
-      const { v4: uuidv4 } = require('uuid');
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${uuidv4()}${ext}`);
-    },
-  }),
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
-    cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
-  },
-  limits: { fileSize: 10 * 1024 * 1024, files: 20 },
-});
-
-// GET /admin/condominios
-router.get('/condominios', isAuthenticated, async (req, res) => {
+router.get('/banners', isAuthenticated, async (req, res) => {
   try {
-    const result = await db.raw(`
-      SELECT c.*,
-        (SELECT path FROM condominio_fotos WHERE condominio_id = c.id AND principal = true LIMIT 1) AS foto_principal
-      FROM condominios c ORDER BY c.created_at DESC
-    `);
-    res.render('admin/condominios-lista', {
-      title: 'Condomínios — Admin',
-      adminNome: req.session.adminNome,
-      condominios: result.rows.map(c => ({ ...c, valor_formatado: formatarPreco(c.valor) })),
-    });
+    const r = await db.raw('SELECT * FROM banners ORDER BY ordem ASC, created_at DESC');
+    res.render('admin/banners-lista', { title: 'Banners', banners: r.rows, adminNome: req.session.adminNome });
   } catch (err) {
     console.error(err);
-    res.redirect('/admin/dashboard');
+    res.render('admin/banners-lista', { title: 'Banners', banners: [], adminNome: req.session.adminNome });
   }
 });
 
-// GET /admin/condominios/novo
-router.get('/condominios/novo', isAuthenticated, (req, res) => {
-  res.render('admin/condominio-form', {
-    title: 'Novo Condomínio — Admin',
-    adminNome: req.session.adminNome,
-    condominio: null,
-    fotos: [],
-    errors: [],
-  });
+router.get('/banners/novo', isAuthenticated, (req, res) => {
+  res.render('admin/banner-form', { title: 'Novo Banner', banner: null, adminNome: req.session.adminNome });
 });
 
-// POST /admin/condominios
-router.post('/condominios', isAuthenticated, condUpload.array('fotos', 20), async (req, res) => {
-  const { nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep, sob_consulta } = req.body;
-  const errors = [];
-  if (!nome || nome.trim() === '') errors.push('Nome é obrigatório.');
-  if (errors.length) {
-    return res.render('admin/condominio-form', {
-      title: 'Novo Condomínio — Admin',
-      adminNome: req.session.adminNome,
-      condominio: req.body,
-      fotos: [],
-      errors,
+router.post('/banners', isAuthenticated, upload.single('imagem'), async (req, res) => {
+  const tituloFinal = `Banner ${new Date().toLocaleDateString('pt-BR')}`;
+  if (!req.file) {
+    return res.render('admin/banner-form', {
+      title: 'Novo Banner', banner: null, adminNome: req.session.adminNome,
+      erro: 'Selecione uma imagem JPG ou PNG.',
     });
   }
-  const precoFinal = sob_consulta ? 0 : (parseFloat(valor) || 0);
+  if (!['image/jpeg', 'image/png'].includes(req.file.mimetype)) {
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    return res.render('admin/banner-form', {
+      title: 'Novo Banner', banner: null, adminNome: req.session.adminNome,
+      erro: 'Formato inválido. Envie apenas JPEG ou PNG.',
+    });
+  }
   try {
-    const ins = await db.raw(
-      `INSERT INTO condominios (nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-      [nome.trim(), precoFinal, descricao || null, caracteristicas || null,
-       endereco || null, bairro || null, cidade || 'Maringá', estado || 'PR', cep || null]
-    );
-    const condId = ins.rows[0].id;
-    if (req.files && req.files.length) {
-      await Promise.all(req.files.map(async (file, i) => {
-        try {
-          const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
-          await db.raw(
-            `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, ?, ?)`,
-            [condId, file.filename, publicUrl, i === 0, i]
-          );
-          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        } catch (e) { console.error('Supabase upload error:', e); }
-      }));
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const dest = `banners/${Date.now()}${ext}`;
+    let imagem_url;
+    try {
+      imagem_url = await uploadToSupabase(req.file.path, dest, req.file.mimetype);
+    } catch (e) {
+      imagem_url = `/uploads/imoveis/${req.file.filename}`;
     }
-    res.redirect('/admin/condominios');
-  } catch (err) {
-    console.error(err);
-    res.redirect('/admin/condominios');
-  }
-});
-
-// GET /admin/condominios/:id/editar
-router.get('/condominios/:id/editar', isAuthenticated, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [condRes, fotosRes] = await Promise.all([
-      db.raw('SELECT * FROM condominios WHERE id = ?', [id]),
-      db.raw('SELECT * FROM condominio_fotos WHERE condominio_id = ? ORDER BY ordem', [id]),
-    ]);
-    const condominio = condRes.rows[0];
-    if (!condominio) return res.redirect('/admin/condominios');
-    res.render('admin/condominio-form', {
-      title: 'Editar Condomínio — Admin',
-      adminNome: req.session.adminNome,
-      condominio,
-      fotos: fotosRes.rows,
-      errors: [],
-    });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/admin/condominios');
-  }
-});
-
-// PUT /admin/condominios/:id
-router.put('/condominios/:id', isAuthenticated, condUpload.array('fotos', 20), async (req, res) => {
-  const { id } = req.params;
-  const { nome, valor, descricao, caracteristicas, endereco, bairro, cidade, estado, cep, sob_consulta } = req.body;
-  const precoFinal = sob_consulta ? 0 : (parseFloat(valor) || 0);
-  try {
+    // Ordem é o último na lista (usuário pode arrastar depois)
+    const maxOrdem = await db.raw('SELECT COALESCE(MAX(ordem), -1) + 1 AS next FROM banners');
+    const nextOrdem = maxOrdem.rows[0].next;
     await db.raw(
-      `UPDATE condominios SET nome=?, valor=?, descricao=?, caracteristicas=?, endereco=?, bairro=?, cidade=?, estado=?, cep=?, updated_at=NOW()
-       WHERE id=?`,
-      [nome.trim(), precoFinal, descricao || null, caracteristicas || null,
-       endereco || null, bairro || null, cidade || 'Maringá', estado || 'PR', cep || null, id]
+      'INSERT INTO banners (titulo, imagem_url, whatsapp_numero, whatsapp_mensagem, ordem, ativo) VALUES (?,?,?,?,?,true)',
+      [tituloFinal, imagem_url, '', '', nextOrdem]
     );
-    if (req.files && req.files.length) {
-      const ordemRes = await db.raw('SELECT COALESCE(MAX(ordem),0)+1 AS next FROM condominio_fotos WHERE condominio_id=?', [id]);
-      const ordemBase = ordemRes.rows[0].next;
-      await Promise.all(req.files.map(async (file, i) => {
-        try {
-          const publicUrl = await uploadToSupabase(file.path, `condominios/${file.filename}`, file.mimetype) || `/uploads/condominios/${file.filename}`;
-          await db.raw(
-            `INSERT INTO condominio_fotos (condominio_id, filename, path, principal, ordem) VALUES (?, ?, ?, false, ?)`,
-            [id, file.filename, publicUrl, ordemBase + i]
-          );
-          if (publicUrl !== `/uploads/condominios/${file.filename}` && fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        } catch (e) { console.error('Supabase upload error:', e); }
-      }));
-    }
-    res.redirect('/admin/condominios');
+    res.redirect('/admin/banners');
   } catch (err) {
     console.error(err);
-    res.redirect('/admin/condominios');
+    res.status(500).send('Erro ao criar banner.');
   }
 });
 
-// DELETE /admin/condominios/:id
-router.delete('/condominios/:id', isAuthenticated, async (req, res) => {
-  const { id } = req.params;
+// POST /admin/banners/reorder — salva nova ordem via drag & drop
+router.post('/banners/reorder', isAuthenticated, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) return res.status(400).json({ error: 'IDs inválidos.' });
   try {
-    const fotosRes = await db.raw('SELECT filename, path FROM condominio_fotos WHERE condominio_id=?', [id]);
-    for (const foto of fotosRes.rows) {
-      if (foto.path && foto.path.startsWith('http')) {
-        await deleteFromSupabase(foto.path);
-      } else {
-        const fp = path.join(__dirname, '../public/uploads/condominios', foto.filename);
-        if (fs.existsSync(fp)) fs.unlinkSync(fp);
-      }
+    for (let i = 0; i < ids.length; i++) {
+      await db.raw('UPDATE banners SET ordem = ? WHERE id = ?', [i, ids[i]]);
     }
-    await db.raw('DELETE FROM condominios WHERE id=?', [id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao excluir.' });
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao reordenar.' });
   }
 });
 
-// DELETE /admin/condominio-fotos/:id
-router.delete('/condominio-fotos/:id', isAuthenticated, async (req, res) => {
-  const { id } = req.params;
+router.delete('/banners/:id', isAuthenticated, async (req, res) => {
   try {
-    const r = await db.raw('SELECT * FROM condominio_fotos WHERE id=?', [id]);
-    const foto = r.rows[0];
-    if (!foto) return res.status(404).json({ error: 'Não encontrada.' });
-    if (foto.path && foto.path.startsWith('http')) {
-      await deleteFromSupabase(foto.path);
-    } else {
-      const fp = path.join(__dirname, '../public/uploads/condominios', foto.filename);
-      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    const r = await db.raw('SELECT * FROM banners WHERE id=?', [req.params.id]);
+    const banner = r.rows[0];
+    if (banner?.imagem_url) {
+      try { await deleteFromSupabase(banner.imagem_url); } catch (e) {}
     }
-    await db.raw('DELETE FROM condominio_fotos WHERE id=?', [id]);
+    await db.raw('DELETE FROM banners WHERE id=?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao excluir foto.' });
+    res.status(500).json({ error: 'Erro ao excluir banner.' });
+  }
+});
+
+router.put('/banners/:id/ativo', isAuthenticated, async (req, res) => {
+  try {
+    const r = await db.raw('SELECT ativo FROM banners WHERE id=?', [req.params.id]);
+    const novoAtivo = !r.rows[0]?.ativo;
+    await db.raw('UPDATE banners SET ativo=?, updated_at=NOW() WHERE id=?', [novoAtivo, req.params.id]);
+    res.json({ success: true, ativo: novoAtivo });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro.' });
   }
 });
 

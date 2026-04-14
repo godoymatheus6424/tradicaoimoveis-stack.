@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .banner-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .banner-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface-container-low);
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      cursor: grab;
+      transition: box-shadow 0.18s, border-color 0.18s, opacity 0.18s;
+      user-select: none;
+    }
+    .banner-item:active { cursor: grabbing; }
+    .banner-item.dragging {
+      opacity: 0.45;
+      border-color: var(--primary);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    }
+    .banner-item.drag-over {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 6%, var(--surface-container-low));
+    }
+    .banner-item__handle {
+      color: var(--outline);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      cursor: grab;
+    }
+    .banner-item__thumb {
+      max-width: 180px;
+      max-height: 100px;
+      width: auto;
+      height: auto;
+      border-radius: var(--radius-xs);
+      flex-shrink: 0;
+      background: var(--surface-container-high);
+      display: block;
+      object-fit: contain;
+    }
+    .banner-item__no-thumb {
+      width: 180px;
+      height: 60px;
+      background: var(--surface-container-high);
+      border-radius: var(--radius-xs);
+      flex-shrink: 0;
+    }
+    .banner-item__order {
+      font-size: var(--label-sm);
+      color: var(--on-surface-variant);
+      font-weight: 600;
+      min-width: 1.5rem;
+      text-align: center;
+    }
+    .banner-item__spacer { flex: 1; }
+    .banner-item__status {
+      font-size: var(--label-sm);
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .banner-item__status--ativo {
+      background: rgba(0,120,60,0.08);
+      color: #006837;
+      border-color: #006837;
+    }
+    .banner-item__status--inativo {
+      background: rgba(186,26,26,0.08);
+      color: var(--error);
+      border-color: var(--error);
+    }
+    .banner-item__del {
+      background: transparent;
+      border: none;
+      color: var(--outline);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: var(--radius-xs);
+      transition: color 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+    }
+    .banner-item__del:hover {
+      color: var(--error);
+      background: rgba(186,26,26,0.08);
+    }
+    .save-order-bar {
+      display: none;
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      z-index: 100;
+    }
+    .empty-state {
+      padding: 3rem 0;
+      color: var(--on-surface-variant);
+      font-size: var(--label-md);
+    }
+  </style>
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'banners' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title">Banners</div>
+      <div class="admin-topbar__user">
+        <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div style="font-size:var(--label-md);color:var(--on-surface-variant);">
+          <% if (banners.length > 0) { %>
+            <%= banners.length %> banner<%= banners.length !== 1 ? 's' : '' %> cadastrado<%= banners.length !== 1 ? 's' : '' %>
+            — arraste para reordenar
+          <% } %>
+        </div>
+        <a href="/admin/banners/novo" class="btn btn--primary btn--sm">+ Novo Banner</a>
+      </div>
+
+      <% if (banners.length === 0) { %>
+      <div class="empty-state">Nenhum banner cadastrado ainda.</div>
+      <% } else { %>
+
+      <div class="banner-list" id="bannerList">
+        <% banners.forEach(function(b, i) { %>
+        <div class="banner-item" draggable="true" data-id="<%= b.id %>" id="banner-<%= b.id %>">
+          <!-- Handle -->
+          <div class="banner-item__handle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="8" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+              <circle cx="8" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+              <circle cx="8" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+              <circle cx="14" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+              <circle cx="14" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+              <circle cx="14" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
+
+          <!-- Número de ordem -->
+          <div class="banner-item__order" id="order-<%= b.id %>"><%= i + 1 %></div>
+
+          <!-- Thumbnail -->
+          <% if (b.imagem_url) { %>
+            <img class="banner-item__thumb" src="<%= b.imagem_url %>" alt="Banner">
+          <% } else { %>
+            <div class="banner-item__no-thumb"></div>
+          <% } %>
+
+          <div class="banner-item__spacer"></div>
+
+          <!-- Toggle ativo/inativo -->
+          <button class="banner-item__status banner-item__status--<%= b.ativo ? 'ativo' : 'inativo' %>"
+                  onclick="toggleAtivo(<%= b.id %>, this)">
+            <%= b.ativo ? 'Ativo' : 'Inativo' %>
+          </button>
+
+          <!-- Excluir -->
+          <button class="banner-item__del" onclick="excluir(<%= b.id %>)" title="Excluir banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+            </svg>
+          </button>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- Barra flutuante de salvar ordem -->
+      <div class="save-order-bar" id="saveOrderBar">
+        <span style="font-size:var(--label-md);color:var(--on-surface-variant);">Ordem alterada</span>
+        <button class="btn btn--primary btn--sm" onclick="salvarOrdem()" id="saveOrderBtn">Salvar ordem</button>
+        <button class="btn btn--secondary btn--sm" onclick="cancelarReordenacao()">Desfazer</button>
+      </div>
+
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Drag & Drop ─────────────────────────────────────────────────
+const list        = document.getElementById('bannerList');
+let draggedEl     = null;
+let originalOrder = null; // snapshot para "Desfazer"
+let orderChanged  = false;
+
+if (list) {
+  // Snapshot inicial
+  originalOrder = Array.from(list.children).map(el => el.id);
+
+  list.addEventListener('dragstart', e => {
+    draggedEl = e.target.closest('.banner-item');
+    if (!draggedEl) return;
+    setTimeout(() => draggedEl.classList.add('dragging'), 0);
+  });
+
+  list.addEventListener('dragend', () => {
+    if (draggedEl) draggedEl.classList.remove('dragging');
+    document.querySelectorAll('.banner-item').forEach(el => el.classList.remove('drag-over'));
+    draggedEl = null;
+    refreshOrderNumbers();
+    checkOrderChanged();
+  });
+
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.banner-item');
+    if (!target || target === draggedEl) return;
+    document.querySelectorAll('.banner-item').forEach(el => el.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+
+    const rect = target.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (e.clientY < midY) {
+      list.insertBefore(draggedEl, target);
+    } else {
+      list.insertBefore(draggedEl, target.nextSibling);
+    }
+  });
+
+  list.addEventListener('dragleave', e => {
+    const target = e.target.closest('.banner-item');
+    if (target) target.classList.remove('drag-over');
+  });
+}
+
+function refreshOrderNumbers() {
+  document.querySelectorAll('.banner-item').forEach((el, i) => {
+    const orderEl = el.querySelector('[id^="order-"]');
+    if (orderEl) orderEl.textContent = i + 1;
+  });
+}
+
+function checkOrderChanged() {
+  if (!list) return;
+  const current = Array.from(list.children).map(el => el.id);
+  const changed = JSON.stringify(current) !== JSON.stringify(originalOrder);
+  orderChanged = changed;
+  const bar = document.getElementById('saveOrderBar');
+  if (bar) bar.style.display = changed ? 'flex' : 'none';
+}
+
+function cancelarReordenacao() {
+  if (!list || !originalOrder) return;
+  originalOrder.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) list.appendChild(el);
+  });
+  refreshOrderNumbers();
+  orderChanged = false;
+  document.getElementById('saveOrderBar').style.display = 'none';
+}
+
+async function salvarOrdem() {
+  if (!list) return;
+  const ids = Array.from(list.children).map(el => parseInt(el.dataset.id));
+  const btn = document.getElementById('saveOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+
+  try {
+    const r = await fetch('/admin/banners/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!r.ok) throw new Error();
+    originalOrder = Array.from(list.children).map(el => el.id);
+    orderChanged = false;
+    document.getElementById('saveOrderBar').style.display = 'none';
+  } catch {
+    alert('Erro ao salvar a ordem. Tente novamente.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Salvar ordem';
+}
+
+// ── Toggle ativo ─────────────────────────────────────────────────
+function toggleAtivo(id, btn) {
+  fetch(`/admin/banners/${id}/ativo`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+  }).then(r => r.json()).then(data => {
+    btn.textContent = data.ativo ? 'Ativo' : 'Inativo';
+    btn.className = `banner-item__status banner-item__status--${data.ativo ? 'ativo' : 'inativo'}`;
+  });
+}
+
+// ── Excluir ───────────────────────────────────────────────────────
+function excluir(id) {
+  if (!confirm('Excluir este banner? Esta ação não pode ser desfeita.')) return;
+  fetch(`/admin/banners/${id}`, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(() => {
+      const el = document.getElementById(`banner-${id}`);
+      if (el) el.remove();
+      refreshOrderNumbers();
+      // Se não sobrar nenhum, recarrega para mostrar o estado vazio
+      if (list && list.children.length === 0) location.reload();
+    });
+}
+</script>
+</body>
+</html>

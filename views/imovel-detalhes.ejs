@@ -93,8 +93,14 @@
           <% } %>
           <% if (imovel.vagas_garagem > 0) { %>
           <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h20v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z"/><path d="M5 10l2-4h10l2 4"/><path d="M10 6v4M14 6v4"/><circle cx="7" cy="15" r="2"/><circle cx="17" cy="15" r="2"/></svg>
             <strong style="color:var(--on-surface);"><%= imovel.vagas_garagem %></strong> Vagas
+          </div>
+          <% } %>
+          <% if (imovel.valor_condominio && imovel.valor_condominio > 0) { %>
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:var(--label-md);color:var(--on-surface-variant);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+            <strong style="color:var(--on-surface);">R$ <%= Number(imovel.valor_condominio).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></strong> Condomínio
           </div>
           <% } %>
           <% if (imovel.area_total) { %>

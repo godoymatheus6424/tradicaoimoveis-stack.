@@ -206,6 +206,7 @@
   line-height: 1;
   margin-bottom: var(--space-sm);
   background: linear-gradient(135deg, var(--primary) 0%, #b21f2d 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -518,6 +519,7 @@
   text-align: center;
   margin-bottom: var(--space-xs);
   background: linear-gradient(90deg, #fff, #b2a89d);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -573,14 +575,6 @@
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
 }
 
-.destaque-card--capa {
-  border: 2px solid var(--primary);
-  box-shadow: 0 8px 32px rgba(105, 0, 8, 0.12);
-}
-
-.destaque-card--capa:hover {
-  box-shadow: 0 16px 48px rgba(105, 0, 8, 0.18);
-}
 
 .destaque-card--empty {
   border: 2px dashed var(--outline-variant);
@@ -600,19 +594,7 @@
   transform: translateY(-4px);
 }
 
-/* Badge "Capa Principal" */
-.destaque-card__badge {
-  background: linear-gradient(135deg, var(--primary) 0%, #8c0010 100%);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.4rem 1rem;
-  text-align: center;
-}
-
-/* Número de posição (2, 3) */
+/* Número de posição */
 .destaque-card__num {
   background: var(--surface-container-low);
   color: var(--on-surface-variant);

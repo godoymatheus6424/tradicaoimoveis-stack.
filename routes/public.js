@@ -67,8 +67,22 @@ router.get('/', async (req, res) => {
     const comerciais = comRes.rows || [];
     comerciais.forEach(d => d.preco_formatado = formatarPreco(d.preco));
 
+    const barracaoRes = await db.raw(
+      `SELECT i.*, ${fotoSql} AS foto_principal
+       FROM imoveis i
+       WHERE i.ativo = true AND (
+         LOWER(i.tipo) LIKE '%barrac%' OR LOWER(i.tipo) LIKE '%galpão%' OR LOWER(i.tipo) LIKE '%galp%'
+       )
+       ORDER BY i.updated_at DESC LIMIT 8`
+    );
+    const barracoes = barracaoRes.rows || [];
+    barracoes.forEach(d => d.preco_formatado = formatarPreco(d.preco));
+
     const catRes = await db.raw('SELECT id, nome FROM categorias WHERE ativo = true ORDER BY ordem ASC');
     const categorias = catRes.rows || [];
+
+    const bannersRes = await db.raw('SELECT * FROM banners WHERE ativo = true ORDER BY ordem ASC, created_at DESC');
+    const banners = bannersRes.rows || [];
 
     res.render('home', {
       title: 'Tradição Imóveis — Maringá',
@@ -76,11 +90,13 @@ router.get('/', async (req, res) => {
       apartamentos,
       casas,
       comerciais,
+      barracoes,
       categorias,
+      banners,
     });
   } catch (err) {
     console.error(err);
-    res.render('home', { title: 'Tradição Imóveis — Maringá', destaques: [], apartamentos: [], casas: [], comerciais: [], categorias: [] });
+    res.render('home', { title: 'Tradição Imóveis — Maringá', destaques: [], apartamentos: [], casas: [], comerciais: [], barracoes: [], categorias: [], banners: [] });
   }
 });
 

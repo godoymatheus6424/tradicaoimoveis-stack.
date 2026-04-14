@@ -102,6 +102,17 @@
               </div>
             </div>
             <div>
+              <label class="input-label">Preço do Condomínio (R$)</label>
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <input type="hidden" id="condominioHidden" name="valor_condominio" value="<%= imovel && imovel.valor_condominio !== null ? imovel.valor_condominio : '' %>">
+                <input type="number" id="condominioInput" class="input" step="0.01" min="0" value="<%= imovel && imovel.valor_condominio !== null ? imovel.valor_condominio : '' %>" placeholder="Ex: 500" style="flex:1;" oninput="document.getElementById('condominioHidden').value=this.value" <%= (!imovel || imovel.valor_condominio === null) ? 'disabled' : '' %>>
+                <label style="display:flex;align-items:center;gap:0.4rem;white-space:nowrap;cursor:pointer;font-size:var(--label-sm);color:var(--on-surface-variant);">
+                  <input type="checkbox" name="sem_condominio" id="semCondominioCheck" onchange="toggleSemCondominio(this)" <%= (!imovel || imovel.valor_condominio === null) ? 'checked' : '' %>>
+                  Sem condomínio
+                </label>
+              </div>
+            </div>
+            <div>
               <label class="input-label">Categoria</label>
               <select name="categoria_id" class="input">
                 <option value="">Sem categoria</option>
@@ -198,12 +209,12 @@
               const limiteBloqueado = !jaEhDestaque && totalDestaques >= 3;
             %>
             <div>
-              <label style="display:flex;align-items:center;gap:0.5rem;cursor:<%= limiteBloqueado ? 'not-allowed' : 'pointer' %>;">
+              <label <%- limiteBloqueado ? 'style="display:flex;align-items:center;gap:0.5rem;cursor:not-allowed;"' : 'style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"' %>>
                 <input type="checkbox" name="destaque" id="destaqueCheck"
                   <%= jaEhDestaque ? 'checked' : '' %>
                   <%= limiteBloqueado ? 'disabled' : '' %>
                 >
-                <span class="input-label" style="margin-bottom:0;opacity:<%= limiteBloqueado ? '0.45' : '1' %>;">Imóvel Destaque</span>
+                <span class="input-label" <%- limiteBloqueado ? 'style="margin-bottom:0;opacity:0.45;"' : 'style="margin-bottom:0;opacity:1;"' %>>Imóvel Destaque</span>
               </label>
               <% if (limiteBloqueado) { %>
                 <div style="margin-top:6px;font-size:0.7rem;color:var(--on-surface-variant);max-width:240px;line-height:1.4;">
@@ -234,9 +245,9 @@
                 <% if (foto.principal) { %>
                 <div class="upload-preview__star">✓ Principal</div>
                 <% } else { %>
-                <button type="button" class="upload-preview__star" onclick="setPrincipal(<%= foto.id %>)">Principal</button>
+                <button type="button" class="upload-preview__star" onclick="setPrincipal('<%= foto.id %>')">Principal</button>
                 <% } %>
-                <button type="button" class="upload-preview__del" onclick="deletarFoto(<%= foto.id %>)">✕</button>
+                <button type="button" class="upload-preview__del" onclick="deletarFoto('<%= foto.id %>')">✕</button>
               </div>
               <% }) %>
             <% } %>
@@ -261,6 +272,11 @@
 </div>
 <script src="/js/admin.js"></script>
 <script>
+// ── Prepara fotos antes do submit (constrói DataTransfer uma única vez) ──
+document.querySelector('form[action*="/admin/imoveis"]')?.addEventListener('submit', function() {
+  prepararFotosParaSubmit();
+});
+
 // ── Conversão de Área ha ↔ m² ──
 function syncArea(tipo) {
   const display = document.getElementById('areaTotal_display');
@@ -357,30 +373,31 @@ function renderizarFotos(files) {
   document.getElementById('uploadFotosManual').style.display = 'none';
   wrap.style.display = 'block';
   grid.innerHTML = '';
+  // Usa fragment para inserir tudo de uma vez sem reflow por item
+  const frag = document.createDocumentFragment();
   files.forEach((file, i) => {
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file); // instantâneo, sem ler o arquivo
     const div = document.createElement('div');
     div.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;border:2.5px solid transparent;transition:border-color .2s';
     div.dataset.idx = i;
     if (i === 0) div.style.borderColor = 'var(--primary)';
-
     const img = document.createElement('img');
     img.src = url;
+    img.loading = 'lazy'; // não carrega imagens fora da viewport imediatamente
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-
     const badge = document.createElement('div');
     badge.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 4px;border-radius:4px;display:none;';
     badge.style.background = 'var(--primary)';
     badge.style.color = '#fff';
     badge.textContent = 'PRINCIPAL';
     if (i === 0) badge.style.display = 'block';
-
     div.appendChild(img);
     div.appendChild(badge);
     div.addEventListener('click', () => selecionarPrincipal(i));
-    grid.appendChild(div);
+    frag.appendChild(div);
   });
-  sincronizarFotosInput();
+  grid.appendChild(frag); // um único reflow
+  // Não constrói DataTransfer aqui — será feito só no submit
 }
 
 function selecionarPrincipal(idx) {
@@ -390,18 +407,17 @@ function selecionarPrincipal(idx) {
     div.style.borderColor = isPrincipal ? 'var(--primary)' : 'transparent';
     div.querySelector('div').style.display = isPrincipal ? 'block' : 'none';
   });
-  sincronizarFotosInput();
+  // Sem construir DataTransfer aqui — só marca visualmente
 }
 
-// Atualiza o input de fotos do formulário: principal primeiro, depois as demais
-function sincronizarFotosInput() {
+// Constrói o FileList ordenado UMA UNICA VEZ, logo antes do submit
+// Isso evita travar o browser ao carregar a pasta ou trocar de principal
+function prepararFotosParaSubmit() {
   if (!_pastaFotos.length) return;
   const ordered = [_pastaFotos[_principalIdx], ..._pastaFotos.filter((_, i) => i !== _principalIdx)];
   const dt = new DataTransfer();
   ordered.forEach(f => dt.items.add(f));
   document.getElementById('fotosInput').files = dt.files;
-  // Atualiza preview do campo de fotos
-  previewFotos(document.getElementById('fotosInput'));
 }
 
 // ── Carregar pasta ──

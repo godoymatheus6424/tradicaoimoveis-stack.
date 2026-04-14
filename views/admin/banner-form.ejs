@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .banner-upload-zone {
+      position: relative;
+      border: 2.5px dashed var(--outline-variant);
+      border-radius: var(--radius-md);
+      background: var(--surface-container-low);
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .banner-upload-zone:hover,
+    .banner-upload-zone.dragover {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 5%, var(--surface-container-low));
+    }
+    .banner-upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .banner-upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3.5rem 2rem;
+      text-align: center;
+      pointer-events: none;
+    }
+    .banner-upload-placeholder svg {
+      color: var(--primary);
+      opacity: 0.7;
+    }
+    .banner-upload-placeholder strong {
+      font-size: var(--label-lg);
+      color: var(--on-surface);
+    }
+    .banner-upload-placeholder span {
+      font-size: var(--label-sm);
+      color: var(--on-surface-variant);
+    }
+    .banner-preview-wrap {
+      display: none;
+      position: relative;
+    }
+    .banner-preview-wrap img {
+      width: 100%;
+      max-height: 340px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      display: block;
+    }
+    .banner-preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      border-radius: var(--radius-sm);
+    }
+    .banner-preview-wrap:hover .banner-preview-overlay {
+      opacity: 1;
+    }
+    .banner-preview-overlay button {
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: var(--radius-xs);
+      padding: 0.6rem 1.2rem;
+      font-size: var(--label-md);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .banner-preview-overlay button:hover {
+      background: #fff;
+    }
+    .banner-preview-overlay button.del {
+      background: rgba(186,26,26,0.88);
+      color: #fff;
+    }
+    .banner-preview-overlay button.del:hover {
+      background: rgba(186,26,26,1);
+    }
+    .banner-format-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: var(--surface-container-high);
+      color: var(--on-surface-variant);
+    }
+  </style>
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <%- include('../partials/admin-sidebar', { active: 'banners' }) %>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar__title"><%= banner ? 'Editar Banner' : 'Novo Banner' %></div>
+      <div class="admin-topbar__user">
+        <%= adminNome %> &nbsp;·&nbsp;
+        <a href="/auth/admin/logout" style="color:var(--primary);font-weight:600;">Sair</a>
+      </div>
+    </div>
+    <div class="admin-content">
+
+      <div style="max-width:720px;margin:0 auto;">
+
+        <form id="bannerForm" action="/admin/banners<%= banner ? '/' + banner.id + '?_method=PUT' : '' %>" method="POST" enctype="multipart/form-data">
+          <% if (banner && banner.id) { %>
+            <input type="hidden" name="_method" value="PUT">
+          <% } %>
+          <!-- Título gerado automaticamente pelo servidor, campo oculto -->
+          <input type="hidden" name="titulo" id="tituloHidden" value="<%= banner ? banner.titulo : '' %>">
+          <input type="hidden" name="ordem" value="<%= banner ? banner.ordem : 0 %>">
+
+          <div class="admin-form" style="padding:2rem;">
+            <div style="margin-bottom:1.75rem;">
+              <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:0.4rem;">Imagem do Banner</h3>
+              <p style="font-size:var(--label-sm);color:var(--on-surface-variant);margin:0;">
+                Faça upload de uma imagem no formato
+                <span class="banner-format-badge">JPG</span>
+                <span class="banner-format-badge">PNG</span>
+                — recomendado <strong>proporção 3:1</strong> (ex: 1200 × 400px).
+              </p>
+            </div>
+
+            <!-- Zona de upload -->
+            <div class="banner-upload-zone" id="uploadZone">
+              <input type="file" name="imagem" id="imgInput" accept=".jpg,.jpeg,.png" <%= !banner ? 'required' : '' %>>
+              <!-- Placeholder visível enquanto sem imagem -->
+              <div class="banner-upload-placeholder" id="placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="2" width="20" height="20" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <strong>Clique ou arraste a imagem aqui</strong>
+                <span>JPEG ou PNG · Tamanho máximo: 10 MB</span>
+              </div>
+
+              <!-- Preview com imagem atual (edição) -->
+              <% if (banner && banner.imagem_url) { %>
+              <div class="banner-preview-wrap" id="previewWrap" style="display:block;">
+                <img id="previewImg" src="<%= banner.imagem_url %>" alt="Banner atual">
+                <div class="banner-preview-overlay">
+                  <button type="button" onclick="trocarImagem()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Trocar imagem
+                  </button>
+                </div>
+              </div>
+              <% } else { %>
+              <div class="banner-preview-wrap" id="previewWrap">
+                <img id="previewImg" src="" alt="">
+                <div class="banner-preview-overlay">
+                  <button type="button" onclick="trocarImagem()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Trocar
+                  </button>
+                  <button type="button" class="del" onclick="limparImagem()">Remover</button>
+                </div>
+              </div>
+              <% } %>
+            </div>
+
+            <div id="errorMsg" style="display:none;margin-top:0.75rem;padding:0.65rem 1rem;background:rgba(186,26,26,0.08);border-radius:var(--radius-xs);color:var(--error);font-size:var(--label-sm);"></div>
+
+            <div style="display:flex;gap:1rem;margin-top:2rem;">
+              <button type="submit" id="submitBtn" class="btn btn--primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:middle;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <%= banner ? 'Salvar Alterações' : 'Publicar Banner' %>
+              </button>
+              <a href="/admin/banners" class="btn btn--secondary">Cancelar</a>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const imgInput   = document.getElementById('imgInput');
+const previewImg = document.getElementById('previewImg');
+const previewWrap = document.getElementById('previewWrap');
+const placeholder = document.getElementById('placeholder');
+const errorMsg   = document.getElementById('errorMsg');
+const uploadZone = document.getElementById('uploadZone');
+const MAX_MB     = 10;
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.style.display = 'block';
+}
+function hideError() {
+  errorMsg.style.display = 'none';
+}
+
+function applyFile(file) {
+  if (!file) return;
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    showError('Formato não suportado. Envie apenas arquivos JPG ou PNG.');
+    return;
+  }
+  if (file.size > MAX_MB * 1024 * 1024) {
+    showError(`O arquivo excede o limite de ${MAX_MB} MB.`);
+    return;
+  }
+  hideError();
+
+  // Gera título automático a partir do nome do arquivo
+  const nome = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+  document.getElementById('tituloHidden').value = nome || ('Banner ' + new Date().toLocaleDateString('pt-BR'));
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    previewImg.src = e.target.result;
+    previewWrap.style.display = 'block';
+    placeholder.style.display = 'none';
+    uploadZone.style.border = '2.5px solid var(--primary)';
+  };
+  reader.readAsDataURL(file);
+}
+
+imgInput.addEventListener('change', () => applyFile(imgInput.files[0]));
+
+// Drag and drop
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    // Injeta no input para envio no form
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    imgInput.files = dt.files;
+    applyFile(f);
+  }
+});
+
+function trocarImagem() {
+  imgInput.click();
+}
+
+function limparImagem() {
+  imgInput.value = '';
+  previewImg.src = '';
+  previewWrap.style.display = 'none';
+  placeholder.style.display = 'flex';
+  uploadZone.style.border = '2.5px dashed var(--outline-variant)';
+  hideError();
+}
+
+// Validar antes de enviar
+document.getElementById('bannerForm').addEventListener('submit', function(e) {
+  const temImagem = imgInput.files.length > 0 || previewImg.src.startsWith('http');
+  if (!temImagem) {
+    e.preventDefault();
+    showError('Selecione uma imagem antes de salvar.');
+    return;
+  }
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = 'Enviando…';
+});
+</script>
+</body>
+</html>

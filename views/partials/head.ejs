@@ -11,5 +11,52 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/pages.css">
   <%- typeof extraCss !== 'undefined' ? extraCss : '' %>
+  <style>
+    #pageLoader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #690008;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(0);
+      transition: transform 0.65s cubic-bezier(0.77, 0, 0.175, 1);
+      will-change: transform;
+    }
+    /* Sai subindo para cima */
+    #pageLoader.page-loader--out {
+      transform: translateY(-100%);
+    }
+    /* Posicionado abaixo da tela (sem transição — ponto de partida da entrada) */
+    #pageLoader.page-loader--below {
+      transform: translateY(100%);
+      transition: none;
+    }
+    #pageLoader__mark {
+      width: 72px;
+      height: 72px;
+      overflow: hidden;
+      flex-shrink: 0;
+      animation: loaderBreath 1.8s ease-in-out infinite;
+    }
+    #pageLoader__mark img {
+      height: 72px;
+      width: auto;
+      max-width: none;
+      display: block;
+      filter: brightness(0) invert(1) opacity(0.22);
+    }
+    @keyframes loaderBreath {
+      0%, 100% { transform: scale(1);    opacity: 1; }
+      50%       { transform: scale(1.08); opacity: 0.6; }
+    }
+  </style>
 </head>
 <body>
+
+<div id="pageLoader">
+  <div id="pageLoader__mark">
+    <img src="/images/logo.png" alt="Tradição Imóveis">
+  </div>
+</div>

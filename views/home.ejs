@@ -1,17 +1,14 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<!-- O Hero vai usar o destaque número 1 (o mais recente) -->
-<% const destaque = destaques.length > 0 ? destaques[0] : null; %>
-
-<!-- HERO (FUSIONADO COM DESTAQUE) -->
+<!-- HERO -->
 <section class="hero" id="heroSection" style="position:relative; overflow:hidden;">
   <div class="hero__bg-image">
-    <img src="<%= destaque && destaque.foto_principal ? destaque.foto_principal : '/images/hero-bg.jpg' %>" alt="Imóvel de luxo" onerror="this.style.display='none'">
+    <img src="/images/hero-maringa-catedral.jpg" alt="Catedral de Maringá, Paraná">
   </div>
   <div class="hero__bg"></div>
   
-  <div class="container" style="position:relative; z-index:10; display:flex; justify-content:center; align-items:center; height:100%;">
+  <div class="container hero__container" style="position:relative; z-index:10; display:flex; justify-content:center; align-items:center; height:100%;">
     <div class="hero__content fade-in hero-glass-card" style="transform-style:preserve-3d; position:relative; background:rgba(25, 25, 25, 0.5); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255, 255, 255, 0.1); padding:3rem; border-radius:24px; transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
       
       <!-- Reflexo especular do glass para o mouse -->
@@ -84,7 +81,8 @@
             <!-- Preço Máximo -->
             <div class="hero-search__field">
               <label class="hero-search__label">Preço Máximo</label>
-              <input type="number" name="preco_max" class="hero-search__input" placeholder="Ex: 800000">
+              <input type="text" id="heroPrecoMaxDisplay" class="hero-search__input" placeholder="R$ 0,00" autocomplete="off" inputmode="numeric">
+              <input type="hidden" name="preco_max" id="heroPrecoMaxValue">
             </div>
 
           </div>
@@ -105,6 +103,213 @@
     </div>
   </div>
 </section>
+
+<% if (banners && banners.length > 0) { %>
+<!-- BANNERS -->
+<section class="promo-banners" id="promoBanners" aria-label="Banners promocionais">
+  <div class="promo-banners__inner">
+
+    <div class="promo-banners__track" id="promoBannersTrack">
+      <% banners.forEach(function(b, i) { %>
+      <a href="https://wa.me/5544998870006?text=Ol%C3%A1%21+Vi+o+banner+no+site+e+tenho+interesse." target="_blank" rel="noopener"
+         class="promo-banners__slide<%= i === 0 ? ' promo-banners__slide--active' : '' %>" data-idx="<%= i %>">
+        <img src="<%= b.imagem_url %>" alt="<%= b.titulo %>" loading="<%= i === 0 ? 'eager' : 'lazy' %>">
+      </a>
+      <% }) %>
+    </div>
+
+    <% if (banners.length > 1) { %>
+    <!-- Setas -->
+    <button class="promo-banners__arrow promo-banners__arrow--prev" id="promoPrev" aria-label="Banner anterior">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="promo-banners__arrow promo-banners__arrow--next" id="promoNext" aria-label="Próximo banner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Indicadores pill -->
+    <div class="promo-banners__pills" id="promoPills">
+      <% banners.forEach(function(b, i) { %>
+      <button class="promo-banners__pill<%= i === 0 ? ' promo-banners__pill--active' : '' %>" data-idx="<%= i %>" aria-label="Banner <%= i + 1 %>"></button>
+      <% }) %>
+    </div>
+
+    <% } %>
+
+  </div>
+</section>
+
+<style>
+.promo-banners {
+  position: relative;
+  width: 100%;
+  background: var(--surface);
+  padding: 3rem 0 3rem;
+}
+.promo-banners__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  position: relative;
+}
+.promo-banners__track {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  /* Sem box-shadow para não criar a linha */
+  aspect-ratio: 16 / 5;
+}
+@media (max-width: 900px) {
+  .promo-banners__track { aspect-ratio: 16 / 6; }
+}
+@media (max-width: 540px) {
+  .promo-banners__track { aspect-ratio: 16 / 8; }
+  .promo-banners__inner { padding: 0 1rem; }
+}
+.promo-banners__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.promo-banners__slide--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.promo-banners__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+/* Gradiente sutil no rodapé mas contido dentro do track */
+.promo-banners__track::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+/* Setas de navegação */
+.promo-banners__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s, opacity 0.2s;
+  opacity: 0.7;
+}
+.promo-banners__arrow:hover {
+  background: rgba(255,255,255,0.22);
+  transform: translateY(-50%) scale(1.08);
+  opacity: 1;
+}
+.promo-banners__arrow--prev { left: 1.25rem; }
+.promo-banners__arrow--next { right: 1.25rem; }
+@media (max-width: 540px) {
+  .promo-banners__arrow { width: 36px; height: 36px; opacity: 0.85; }
+  .promo-banners__arrow--prev { left: 0.6rem; }
+  .promo-banners__arrow--next { right: 0.6rem; }
+}
+/* Pills indicadoras */
+.promo-banners__pills {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+.promo-banners__pill {
+  height: 4px;
+  width: 24px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.35);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s;
+}
+.promo-banners__pill--active {
+  width: 48px;
+  background: #fff;
+}
+</style>
+
+<script>
+(function () {
+  'use strict';
+  const track    = document.getElementById('promoBannersTrack');
+  if (!track) return;
+  const slides   = Array.from(track.querySelectorAll('.promo-banners__slide'));
+  const pills    = Array.from(document.querySelectorAll('.promo-banners__pill'));
+  const DURATION = 6000; // ms por slide
+
+  if (slides.length <= 1) return;
+
+  let current = 0;
+  let timer;
+
+  function goTo(idx) {
+    slides[current].classList.remove('promo-banners__slide--active');
+    pills[current]?.classList.remove('promo-banners__pill--active');
+    current = (idx + slides.length) % slides.length;
+    slides[current].classList.add('promo-banners__slide--active');
+    pills[current]?.classList.add('promo-banners__pill--active');
+    resetTimer();
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    timer = setInterval(() => goTo(current + 1), DURATION);
+  }
+
+  // Pills click
+  pills.forEach((p, i) => p.addEventListener('click', () => goTo(i)));
+
+  // Arrows
+  document.getElementById('promoPrev')?.addEventListener('click', () => goTo(current - 1));
+  document.getElementById('promoNext')?.addEventListener('click', () => goTo(current + 1));
+
+  // Touch swipe
+  let touchStartX = 0;
+  const section = document.getElementById('promoBanners');
+  section?.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  section?.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) goTo(current + (diff > 0 ? 1 : -1));
+  }, { passive: true });
+
+  // Pausa ao hover — mantém o slide atual sem travar a UX
+  section?.addEventListener('mouseenter', () => clearInterval(timer));
+  section?.addEventListener('mouseleave', resetTimer);
+
+
+  resetTimer();
+})();
+</script>
+
+<% } %>
 
 <!-- SEÇÃO STORIES DESTAQUES (CHARACTER SELECTOR) -->
 <% if (destaques && destaques.length > 0) { %>
@@ -587,6 +792,80 @@
 
 
 <script>
+// HEADER EXPANDIDO NA HOME
+(function() {
+  const header = document.querySelector('.site-header');
+  const hero   = document.getElementById('heroSection');
+  if (!header) return;
+
+  function setHeroHeight() {
+    if (hero) {
+      hero.style.height = (window.visualViewport?.height || window.innerHeight) - header.offsetHeight + 'px';
+    }
+  }
+
+  // Expande e calcula altura inicial
+  let expanded = true;
+  header.classList.add('site-header--expanded');
+  setHeroHeight();
+
+  // Histerese: thresholds separados para evitar loop de feedback
+  // Encolhe ao passar de 60px, expande só ao voltar abaixo de 10px
+  const SHRINK_AT = 60;
+  const EXPAND_AT = 10;
+
+  let ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        const y = window.scrollY;
+        if (expanded && y > SHRINK_AT) {
+          expanded = false;
+          header.classList.remove('site-header--expanded');
+          setHeroHeight();
+        } else if (!expanded && y < EXPAND_AT) {
+          expanded = true;
+          header.classList.add('site-header--expanded');
+          setHeroHeight();
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // Recalcula se redimensionar janela
+  window.addEventListener('resize', setHeroHeight, { passive: true });
+})();
+
+// MÁSCARA DE MOEDA — Preço Máximo
+(function() {
+  const display = document.getElementById('heroPrecoMaxDisplay');
+  const hidden  = document.getElementById('heroPrecoMaxValue');
+  if (!display || !hidden) return;
+
+  function formatBRL(digits) {
+    if (!digits) return '';
+    var num = parseInt(digits, 10) / 100;
+    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  display.addEventListener('input', function() {
+    var digits = this.value.replace(/\D/g, '');
+    this.value = formatBRL(digits);
+    hidden.value = digits ? String(Math.round(parseInt(digits, 10) / 100)) : '';
+  });
+
+  display.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace') {
+      var digits = this.value.replace(/\D/g, '').slice(0, -1);
+      this.value = formatBRL(digits);
+      hidden.value = digits ? String(Math.round(parseInt(digits, 10) / 100)) : '';
+      e.preventDefault();
+    }
+  });
+})();
+
 // HS-SELECT: Custom dropdowns do hero search
 (function() {
   document.querySelectorAll('.hs-select').forEach(function(sel) {
@@ -902,6 +1181,12 @@
 })();
 </script>
 
+
+
+
+
+
+
 <!-- CARROSSEIS DE IMÓVEIS POR TIPO -->
 <section class="tipos-section">
   <div class="container">
@@ -910,6 +1195,7 @@
       const tiposCarrossel = [
         { label: 'Apartamentos', em: 'Apartamentos', lista: apartamentos, tipo: 'apartamento', link: '/imoveis?tipo=Apartamento', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 15h18"/></svg>' },
         { label: 'Casas', em: 'Casas', lista: casas, tipo: 'casa', link: '/imoveis?tipo=Casa', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20h20"/><path d="M6 20V8l6-6 6 6v12"/><path d="M10 20v-6h4v6"/></svg>' },
+        { label: 'Barracões e Galpões', em: 'Barracões', lista: barracoes, tipo: 'barracao', link: '/imoveis?tipo=Galpão%2FBarracão', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20h20"/><path d="M2 10l10-7 10 7"/><path d="M4 10v10"/><path d="M20 10v10"/><path d="M8 20v-6h8v6"/></svg>' },
         { label: 'Comerciais', em: 'Comerciais', lista: comerciais, tipo: 'comercial', link: '/imoveis?tipo=Comercial', icone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="15" rx="1"/><path d="M16 7V5a2 2 0 00-4 0v2"/><path d="M8 7V5a2 2 0 00-4 0v2"/><path d="M12 12v5"/><path d="M8 12v5"/><path d="M16 12v5"/></svg>' },
       ];
     %>
@@ -992,7 +1278,7 @@
                 <% } %>
                 <% if (item.vagas_garagem > 0) { %>
                 <span class="mini-spec">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8"><rect x="1" y="9" width="22" height="11" rx="2"/><path d="M7 9V7a5 5 0 0110 0v2"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h20v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z"/><path d="M5 10l2-4h10l2 4"/><path d="M10 6v4M14 6v4"/><circle cx="7" cy="15" r="2"/><circle cx="17" cy="15" r="2"/></svg>
                   <strong><%= item.vagas_garagem %></strong>
                 </span>
                 <% } %>
