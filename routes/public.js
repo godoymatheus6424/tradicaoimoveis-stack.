@@ -67,16 +67,20 @@ router.get('/', async (req, res) => {
     const comerciais = comRes.rows || [];
     comerciais.forEach(d => d.preco_formatado = formatarPreco(d.preco));
 
+    const catRes = await db.raw('SELECT id, nome FROM categorias WHERE ativo = true ORDER BY ordem ASC');
+    const categorias = catRes.rows || [];
+
     res.render('home', {
       title: 'Tradição Imóveis — Maringá',
       destaques,
       apartamentos,
       casas,
       comerciais,
+      categorias,
     });
   } catch (err) {
     console.error(err);
-    res.render('home', { title: 'Tradição Imóveis — Maringá', destaques: [], apartamentos: [], casas: [], comerciais: [] });
+    res.render('home', { title: 'Tradição Imóveis — Maringá', destaques: [], apartamentos: [], casas: [], comerciais: [], categorias: [] });
   }
 });
 

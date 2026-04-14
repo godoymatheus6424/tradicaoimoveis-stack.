@@ -19,22 +19,80 @@
       
       <div style="position:relative; z-index:2;">
         <div class="hero__eyebrow">Tradição Imóveis · Desde 1994</div>
-        <h1 class="hero__title">
-          Encontre onde sua<br>
-          <em>história</em> começa
-        </h1>
-        <div class="hero__bar"></div>
-        <p class="hero__subtitle">Curadoria exclusiva de imóveis em Maringá e região. Mais de três décadas conectando famílias a lares extraordinários.</p>
-        
-        <div class="hero__actions" style="margin-top:2rem;">
-          <% if (destaque) { %>
-            <a href="#carrossel-destaques" class="btn btn--primary">Ver imóveis em destaque</a>
-            <a href="/imoveis" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);" onmouseover="this.style.color='#1a1714'" onmouseout="this.style.color='rgba(245,240,232,0.85)'">Todos os Imóveis</a>
-          <% } else { %>
-            <a href="/imoveis" class="btn btn--primary">Ver Imóveis</a>
-            <a href="/contato" class="btn btn--secondary" style="color:rgba(245,240,232,0.85);border-color:rgba(245,240,232,0.25);">Fale Conosco</a>
-          <% } %>
-        </div>
+        <p class="hero-search__heading">Encontre seu imóvel ideal</p>
+
+        <form class="hero-search" action="/imoveis" method="GET" id="heroSearchForm">
+          <div class="hero-search__grid">
+
+            <!-- Finalidade -->
+            <div class="hero-search__field">
+              <label class="hero-search__label">Finalidade</label>
+              <div class="hs-select" data-name="finalidade">
+                <div class="hs-select__trigger">
+                  <span class="hs-select__value">Venda e Aluguel</span>
+                  <svg class="hs-select__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="hs-select__dropdown">
+                  <div class="hs-select__option hs-select__option--selected" data-value="">Venda e Aluguel</div>
+                  <div class="hs-select__option" data-value="venda">Venda</div>
+                  <div class="hs-select__option" data-value="aluguel">Aluguel</div>
+                </div>
+                <input type="hidden" name="finalidade" value="">
+              </div>
+            </div>
+
+            <!-- Tipo -->
+            <div class="hero-search__field">
+              <label class="hero-search__label">Tipo</label>
+              <div class="hs-select" data-name="tipo">
+                <div class="hs-select__trigger">
+                  <span class="hs-select__value">Todos os tipos</span>
+                  <svg class="hs-select__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="hs-select__dropdown">
+                  <div class="hs-select__option hs-select__option--selected" data-value="">Todos os tipos</div>
+                  <div class="hs-select__option" data-value="Casa">Casa</div>
+                  <div class="hs-select__option" data-value="Apartamento">Apartamento</div>
+                  <div class="hs-select__option" data-value="Terreno">Terreno</div>
+                  <div class="hs-select__option" data-value="Sobrado">Sobrado</div>
+                  <div class="hs-select__option" data-value="Galpão/Barracão">Galpão / Barracão</div>
+                  <div class="hs-select__option" data-value="Sala/Salão">Sala / Salão</div>
+                  <div class="hs-select__option" data-value="Fazenda">Fazenda</div>
+                </div>
+                <input type="hidden" name="tipo" value="">
+              </div>
+            </div>
+
+            <!-- Categoria -->
+            <div class="hero-search__field">
+              <label class="hero-search__label">Categoria</label>
+              <div class="hs-select" data-name="categoria_id">
+                <div class="hs-select__trigger">
+                  <span class="hs-select__value">Todas</span>
+                  <svg class="hs-select__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="hs-select__dropdown">
+                  <div class="hs-select__option hs-select__option--selected" data-value="">Todas</div>
+                  <% categorias.forEach(function(cat) { %>
+                  <div class="hs-select__option" data-value="<%= cat.id %>"><%= cat.nome %></div>
+                  <% }) %>
+                </div>
+                <input type="hidden" name="categoria_id" value="">
+              </div>
+            </div>
+
+            <!-- Preço Máximo -->
+            <div class="hero-search__field">
+              <label class="hero-search__label">Preço Máximo</label>
+              <input type="number" name="preco_max" class="hero-search__input" placeholder="Ex: 800000">
+            </div>
+
+          </div>
+          <button type="submit" class="hero-search__btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            Buscar Imóveis
+          </button>
+        </form>
       </div>
     
     </div>
@@ -164,6 +222,203 @@
 <% } %>
 
 <style>
+/* =====================
+   HERO SEARCH FORM
+===================== */
+.hero-search__heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  font-weight: 600;
+  color: rgba(240, 236, 228, 0.92);
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.hero-search__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.hero-search__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.hero-search__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(240, 236, 228, 0.45);
+}
+
+.hero-search__input {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  color: rgba(240, 236, 228, 0.9);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.hero-search__input::placeholder {
+  color: rgba(240, 236, 228, 0.3);
+}
+
+.hero-search__input:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+/* Cor da seta dos selects */
+.hero-search__input option {
+  background: #1e1c18;
+  color: #f0ece4;
+}
+
+.hero-search__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.5rem;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.hero-search__btn:hover {
+  background: color-mix(in srgb, var(--primary) 85%, white);
+  transform: translateY(-1px);
+}
+
+/* =====================
+   HERO CUSTOM SELECT (hs-select)
+===================== */
+.hs-select {
+  position: relative;
+  user-select: none;
+}
+
+.hs-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  color: rgba(240, 236, 228, 0.9);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.hs-select--open .hs-select__trigger,
+.hs-select__trigger:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.hs-select__arrow {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+.hs-select--open .hs-select__arrow {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+
+.hs-select__dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(28, 26, 22, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 200;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  animation: hs-drop-in 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+.hs-select--open .hs-select__dropdown {
+  display: block;
+}
+
+@keyframes hs-drop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hs-select__option {
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(240, 236, 228, 0.7);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hs-select__option:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(240, 236, 228, 1);
+}
+.hs-select__option--selected {
+  color: var(--on-primary-container);
+  font-weight: 600;
+  background: rgba(105, 0, 8, 0.25);
+}
+
+/* Ajuste do padding do card no mobile para o form caber bem */
+@media (max-width: 640px) {
+  .hero-glass-card {
+    padding: 1.75rem !important;
+  }
+  .hero-search__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+  .hero-search__input {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .hero-search__heading {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .hs-select__trigger {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .hs-select__option {
+    padding: 0.6rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
 /* CSS do Seletor de Personagens e Stories */
 .cs-wrapper {
   display: flex;
@@ -291,19 +546,81 @@
   .cs-card__photo { flex: 5; height: 100%; }
   .cs-card__info { flex: 4; padding: 3rem 2.5rem; }
 }
+@media(max-width: 768px) {
+  /* Setas dos destaques: no mobile apenas swipe */
+  .cs-nav-btn { display: none !important; }
+}
+
 @media(max-width: 640px) {
   .cs-wrapper { padding: 0 1rem; }
-  .cs-nav-btn { display: none !important; } /* Mobile: sem setas, apenas swipe */
-  .cs-viewport { height: 600px; }
-  .cs-card__info { padding: 1.5rem; }
-  .cs-card__title { font-size: 1.3rem !important; margin-bottom: 1rem !important; }
+  /* Altura maior para o "ver detalhes" não ser cortado */
+  .cs-viewport { height: clamp(600px, 92svh, 720px); }
+  .cs-card__info { padding: 1.25rem; }
+  .cs-card__title { font-size: 1.25rem !important; margin-bottom: 0.75rem !important; }
   .cs-stories-progress { top: 0.75rem; left: 0.75rem; right: 0.75rem; }
+}
+
+/* Desativa brilho e tilt do hero em dispositivos touch (sem hover) */
+@media (hover: none) and (pointer: coarse) {
+  .hero-shine { display: none !important; }
+  .hero-glass-card {
+    transform: none !important;
+    touch-action: manipulation;
+    /* Padding reduzido para não cortar em telas menores */
+    padding: 1.75rem !important;
+  }
+}
+
+/* Telas muito pequenas: padding ainda menor no hero card */
+@media (max-width: 390px) {
+  .hero-glass-card { padding: 1.25rem !important; }
+  .cs-viewport { height: clamp(580px, 95svh, 700px); }
+}
+
+/* Remove a sombra/linha escura no topo da seção "Nossos Imóveis" no mobile */
+@media (max-width: 768px) {
+  .tipos-section::before,
+  .tipos-section::after { display: none; }
 }
 </style>
 
 
 
 <script>
+// HS-SELECT: Custom dropdowns do hero search
+(function() {
+  document.querySelectorAll('.hs-select').forEach(function(sel) {
+    const trigger  = sel.querySelector('.hs-select__trigger');
+    const dropdown = sel.querySelector('.hs-select__dropdown');
+    const valueEl  = sel.querySelector('.hs-select__value');
+    const hidden   = sel.querySelector('input[type="hidden"]');
+    const options  = sel.querySelectorAll('.hs-select__option');
+
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isOpen = sel.classList.contains('hs-select--open');
+      // Fecha todos
+      document.querySelectorAll('.hs-select--open').forEach(function(s) { s.classList.remove('hs-select--open'); });
+      if (!isOpen) sel.classList.add('hs-select--open');
+    });
+
+    options.forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        options.forEach(function(o) { o.classList.remove('hs-select__option--selected'); });
+        opt.classList.add('hs-select__option--selected');
+        valueEl.textContent = opt.textContent;
+        hidden.value = opt.dataset.value;
+        sel.classList.remove('hs-select--open');
+      });
+    });
+  });
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.hs-select--open').forEach(function(s) { s.classList.remove('hs-select--open'); });
+  });
+})();
+
 (function () {
   // 1. HERO TILT SCRIPT
   const heroSection = document.getElementById('heroSection');

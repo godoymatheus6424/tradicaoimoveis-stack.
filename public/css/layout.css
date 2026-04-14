@@ -267,6 +267,14 @@
   letter-spacing: -0.03em;
 }
 
+.footer__logo-img {
+  height: 52px;
+  width: auto;
+  margin-bottom: var(--space-md);
+  /* Converte para branco e reduz um pouco a opacidade para integrar melhor ao fundo escuro */
+  filter: brightness(0) invert(1) opacity(0.88);
+}
+
 .footer__tagline {
   font-size: var(--label-md);
   color: rgba(240, 236, 228, 0.5);
@@ -522,8 +530,8 @@
   .container { padding: 0 var(--space-md); }
 
   /* Header maior no mobile para dar mais ênfase à logo */
-  .nav { padding: 1.25rem 0; }
-  .nav__logo-img { height: 44px; }
+  .nav { padding: 1.75rem 0; }
+  .nav__logo-img { height: 54px; }
 
   /* Botão "Agendar Visita" some no mobile pequeno, fica só o burger */
   .nav__actions .btn { display: none; }
@@ -547,4 +555,11 @@
   /* Footer simplificado */
   .footer__grid { gap: var(--space-xl); }
   .footer { padding: var(--space-2xl) 0 var(--space-lg); }
+
+  /* Email longo no rodapé: fonte menor + quebra de linha */
+  .footer__link {
+    font-size: 0.7rem;
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
 }

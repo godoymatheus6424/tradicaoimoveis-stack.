@@ -111,6 +111,21 @@ async function buscarImoveis(pagina = 1) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Pré-preenche os filtros com os parâmetros da URL (ex: vindos do hero search)
+  const urlParams = new URLSearchParams(window.location.search);
+  const mapa = {
+    tipo:         'filtroTipo',
+    finalidade:   'filtroFinalidade',
+    quartos:      'filtroQuartos',
+    categoria_id: 'filtroCategoria',
+    preco_max:    'filtroPrecoMax',
+  };
+  Object.entries(mapa).forEach(([param, id]) => {
+    const val = urlParams.get(param);
+    const el = document.getElementById(id);
+    if (val && el) el.value = val;
+  });
+
   document.getElementById('btnBuscar')?.addEventListener('click', () => buscarImoveis(1));
 
   ['filtroTipo', 'filtroFinalidade', 'filtroQuartos', 'filtroCategoria'].forEach(id => {
