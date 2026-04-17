@@ -1,0 +1,15 @@
+# cPanel Node.js (Passenger) — Tradição Imóveis
+# Este arquivo é usado pelo Apache para encaminhar requests ao Node.js
+
+Options -MultiViews
+RewriteEngine On
+
+# Servir arquivos estáticos diretamente (performance)
+RewriteCond %{REQUEST_URI} ^/(css|js|images|uploads)/
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Tudo mais vai para o Node.js via Passenger
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ server.js [QSA,L]

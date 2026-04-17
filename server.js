@@ -7,6 +7,7 @@ const path = require('path');
 const knex = require('./db');
 
 const app = express();
+app.set('trust proxy', 1); // cPanel/Apache reverse proxy
 const PgSession = connectPgSimple(session);
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -51,7 +52,8 @@ app.use(
   session({
     store: new PgSession({
       pool: pool,
-      tableName: 'session'
+      tableName: 'session',
+      createTableIfMissing: true,
     }),
     secret: process.env.SESSION_SECRET || 'tradicao-secret-key',
     resave: false,
@@ -95,4 +97,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-setInterval(() => console.log('Ping -> Mantendo servidor vivo'), 30000);
