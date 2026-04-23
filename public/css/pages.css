@@ -1354,9 +1354,9 @@
 
 @media (max-width: 640px) {
   /* Hero */
-  .hero { height: calc(100svh - 85px); min-height: unset; }
+  .hero { height: calc(100svh - 68px); min-height: unset; }
   .hero__container { align-items: center !important; }
-  .hero__content { max-width: 100%; }
+  .hero__content { max-width: 100%; width: 100%; }
   .hero__eyebrow { font-size: 0.6rem; }
 
   /* Destaque header */

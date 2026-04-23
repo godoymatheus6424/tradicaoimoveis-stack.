@@ -80,10 +80,10 @@
 
 @media (max-width: 640px) {
   .site-header--expanded .nav {
-    padding: 2.25rem 0;
+    padding: 1.25rem 0;
   }
   .site-header--expanded .nav__logo-img {
-    height: 64px;
+    height: 48px;
   }
 }
 
@@ -548,9 +548,9 @@
   /* Container mais estreito */
   .container { padding: 0 var(--space-md); }
 
-  /* Header maior no mobile para dar mais ênfase à logo */
-  .nav { padding: 1.75rem 0; }
-  .nav__logo-img { height: 54px; }
+  /* Header compacto no mobile */
+  .nav { padding: 0.875rem 0; }
+  .nav__logo-img { height: 42px; }
 
   /* Botão "Agendar Visita" some no mobile pequeno, fica só o burger */
   .nav__actions .btn { display: none; }
