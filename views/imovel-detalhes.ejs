@@ -13,8 +13,16 @@
       <!-- ESQUERDA: Galeria -->
       <div class="detalhes-galeria">
         <% if (fotos && fotos.length > 0) { %>
-        <div class="galeria__principal" id="galeriaPrincipal" onclick="abrirLightbox(fotoAtualIdx)">
+        <div class="galeria__principal" id="galeriaPrincipal" onclick="abrirLightbox(fotoAtualIdx)" style="position:relative;">
           <img id="fotoAtiva" src="<%= fotos[0].path %>" alt="<%= imovel.titulo %>">
+          <% if (fotos.length > 1) { %>
+          <button class="galeria__arrow galeria__arrow--prev" onclick="event.stopPropagation();navFoto(-1)" aria-label="Foto anterior">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="galeria__arrow galeria__arrow--next" onclick="event.stopPropagation();navFoto(1)" aria-label="Próxima foto">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <% } %>
         </div>
         <% if (fotos.length > 1) { %>
         <div style="position:relative;display:flex;align-items:center;gap:8px;margin-top:var(--space-xs);">
@@ -174,7 +182,7 @@
     </div>
     <div class="grid-3 fade-in">
       <% relacionados.forEach(function(im) { %>
-      <div class="card">
+      <a href="/imovel/<%= im.id %>" class="card" style="display:block;text-decoration:none;color:inherit;">
         <div class="card__image">
           <% if (im.foto_principal) { %>
             <img src="<%= im.foto_principal %>" alt="<%= im.titulo %>">
@@ -185,14 +193,46 @@
         <div class="card__body">
           <div class="card__title"><%= im.titulo %></div>
           <div class="card__price"><%= im.preco_formatado %></div>
-          <a href="/imovel/<%= im.id %>" class="btn btn--ghost btn--sm">Saiba Mais</a>
+          <span class="btn btn--ghost btn--sm">Saiba Mais</span>
         </div>
-      </div>
+      </a>
       <% }) %>
     </div>
   </div>
 </section>
 <% } %>
+
+<style>
+.galeria__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  opacity: 0;
+}
+.galeria__principal:hover .galeria__arrow { opacity: 1; }
+.galeria__arrow:hover { background: rgba(0,0,0,0.7); }
+.galeria__arrow--prev { left: 0.75rem; }
+.galeria__arrow--next { right: 0.75rem; }
+@media (hover: none) {
+  .galeria__arrow { opacity: 0.85; }
+}
+.card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+</style>
 
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
@@ -213,6 +253,17 @@ function trocarFoto(src, el, idx) {
   fotoAtualIdx = idx;
   document.querySelectorAll('.galeria__thumb').forEach(t => t.classList.remove('galeria__thumb--active'));
   el.classList.add('galeria__thumb--active');
+}
+
+function navFoto(dir) {
+  const newIdx = (fotoAtualIdx + dir + fotos.length) % fotos.length;
+  const thumbEl = document.querySelector(`.galeria__thumb[data-idx="${newIdx}"]`);
+  if (thumbEl) {
+    trocarFoto(fotos[newIdx], thumbEl, newIdx);
+  } else {
+    document.getElementById('fotoAtiva').src = fotos[newIdx];
+    fotoAtualIdx = newIdx;
+  }
 }
 
 function abrirLightbox(idx) {
