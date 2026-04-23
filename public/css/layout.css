@@ -78,24 +78,16 @@
   height: 52px;
 }
 
+/* No mobile o header expandido usa clamp() para escalar com a largura da tela:
+   logo e padding crescem proporcionalmente — não há valor fixo que possa
+   estourar o container em telas estreitas como o Z Flip (360px). */
 @media (max-width: 640px) {
   .site-header--expanded .nav {
-    padding: 2.25rem 0;
+    padding: clamp(1.25rem, 5vw, 2.25rem) 0;
   }
   .site-header--expanded .nav__logo-img {
-    height: 64px;
+    height: clamp(44px, 13vw, 64px);
   }
-}
-
-/* ── Telas muito estreitas (Z Flip e similares ≤374px) ──────────────────────
-   Z Flip: 360px de largura — logo larga pode estourar o container nessa largura.
-   iPhone SE (375px) e demais não são afetados por esse breakpoint.            */
-@media (max-width: 374px) {
-  .nav { padding: 1rem 0; }
-  .nav__logo-img { height: 40px; max-width: 160px; object-fit: contain; }
-
-  .site-header--expanded .nav { padding: 1.25rem 0; }
-  .site-header--expanded .nav__logo-img { height: 46px; max-width: 160px; }
 }
 
 .drawer__logo-img {
