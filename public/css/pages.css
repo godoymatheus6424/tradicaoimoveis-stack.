@@ -1353,8 +1353,13 @@
 }
 
 @media (max-width: 640px) {
-  /* Hero */
-  .hero { height: calc(100svh - 85px); min-height: unset; }
+  /* Hero: usa dvh (ajusta dinamicamente com barra do browser) em vez de JS
+     que tinha bug de timing — media query + svh fallback para browsers antigos */
+  .hero {
+    height: 100svh; /* fallback para browsers sem dvh */
+    height: 100dvh; /* ajusta dinamicamente com barra do browser */
+    min-height: unset;
+  }
   .hero__container { align-items: center !important; }
   .hero__content { max-width: 100%; width: 100%; }
   .hero__eyebrow { font-size: 0.6rem; }

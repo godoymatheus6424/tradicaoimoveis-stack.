@@ -822,22 +822,14 @@
 // HEADER EXPANDIDO NA HOME
 (function() {
   const header = document.querySelector('.site-header');
-  const hero   = document.getElementById('heroSection');
   if (!header) return;
 
-  function setHeroHeight() {
-    if (hero) {
-      hero.style.height = (window.visualViewport?.height || window.innerHeight) - header.offsetHeight + 'px';
-    }
-  }
+  // Altura do hero controlada por CSS (dvh) — sem JS para evitar bug de timing
+  // onde offsetHeight é medido antes da transição CSS completar.
 
-  // Expande e calcula altura inicial
   let expanded = true;
   header.classList.add('site-header--expanded');
-  setHeroHeight();
 
-  // Histerese: thresholds separados para evitar loop de feedback
-  // Encolhe ao passar de 60px, expande só ao voltar abaixo de 10px
   const SHRINK_AT = 60;
   const EXPAND_AT = 10;
 
@@ -849,20 +841,15 @@
         if (expanded && y > SHRINK_AT) {
           expanded = false;
           header.classList.remove('site-header--expanded');
-          setHeroHeight();
         } else if (!expanded && y < EXPAND_AT) {
           expanded = true;
           header.classList.add('site-header--expanded');
-          setHeroHeight();
         }
         ticking = false;
       });
       ticking = true;
     }
   }, { passive: true });
-
-  // Recalcula se redimensionar janela
-  window.addEventListener('resize', setHeroHeight, { passive: true });
 })();
 
 // MÁSCARA DE MOEDA — Preço Máximo
