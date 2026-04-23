@@ -78,15 +78,31 @@
   height: 52px;
 }
 
-/* No mobile o header expandido usa clamp() para escalar com a largura da tela:
-   logo e padding crescem proporcionalmente — não há valor fixo que possa
-   estourar o container em telas estreitas como o Z Flip (360px). */
+/* Mobile: logo flexível para nunca estourar o container independente
+   do dispositivo. A imagem se adapta ao espaço disponível após o burger. */
 @media (max-width: 640px) {
+  .nav__logo {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .nav__logo-img {
+    width: 100%;
+    height: auto;
+    max-height: 54px;
+    object-fit: contain;
+    object-position: left center;
+  }
+  .nav__actions {
+    flex-shrink: 0;
+  }
+
+  /* Estado expandido: logo ligeiramente maior, nunca ultrapassa o espaço */
   .site-header--expanded .nav {
-    padding: clamp(1.25rem, 5vw, 2.25rem) 0;
+    padding: clamp(1rem, 4vw, 2rem) 0;
   }
   .site-header--expanded .nav__logo-img {
-    height: clamp(44px, 13vw, 64px);
+    max-height: clamp(44px, 13vw, 60px);
   }
 }
 
