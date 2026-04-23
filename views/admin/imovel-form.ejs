@@ -114,9 +114,7 @@
                   ['Galpão/Barracão','Galpão/Barracão'],
                   ['Sala/Salão',     'Sala/Salão'],
                   ['Fazenda',        'Fazenda'],
-                  ['comercial',      'Comercial (legado)'],
-                  ['rural',          'Rural (legado)'],
-                  ['cobertura',      'Cobertura'],
+                  ['Cobertura',      'Cobertura'],
                 ].forEach(function([val, label]) { %>
                 <option value="<%= val %>" <%= imovel && imovel.tipo === val ? 'selected' : '' %>><%= label %></option>
                 <% }) %>
