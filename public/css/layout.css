@@ -80,11 +80,22 @@
 
 @media (max-width: 640px) {
   .site-header--expanded .nav {
-    padding: 1.25rem 0;
+    padding: 2.25rem 0;
   }
   .site-header--expanded .nav__logo-img {
-    height: 48px;
+    height: 64px;
   }
+}
+
+/* ── Telas muito estreitas (Z Flip e similares ≤374px) ──────────────────────
+   Z Flip: 360px de largura — logo larga pode estourar o container nessa largura.
+   iPhone SE (375px) e demais não são afetados por esse breakpoint.            */
+@media (max-width: 374px) {
+  .nav { padding: 1rem 0; }
+  .nav__logo-img { height: 40px; max-width: 160px; object-fit: contain; }
+
+  .site-header--expanded .nav { padding: 1.25rem 0; }
+  .site-header--expanded .nav__logo-img { height: 46px; max-width: 160px; }
 }
 
 .drawer__logo-img {
@@ -548,9 +559,9 @@
   /* Container mais estreito */
   .container { padding: 0 var(--space-md); }
 
-  /* Header compacto no mobile */
-  .nav { padding: 0.875rem 0; }
-  .nav__logo-img { height: 42px; }
+  /* Header mobile — mantém tamanho original */
+  .nav { padding: 1.75rem 0; }
+  .nav__logo-img { height: 54px; }
 
   /* Botão "Agendar Visita" some no mobile pequeno, fica só o burger */
   .nav__actions .btn { display: none; }
