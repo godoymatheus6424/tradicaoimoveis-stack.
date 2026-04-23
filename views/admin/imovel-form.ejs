@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/admin.css">
+  <script>window._csrf='<%= csrfToken() %>';</script>
 </head>
 <body class="admin-body">
 <div class="admin-layout">
@@ -59,12 +60,39 @@
 
       <form
         method="POST"
-        action="<%= imovel ? '/admin/imoveis/' + imovel.id + '?_method=PUT' : '/admin/imoveis' %>"
+        action="<%= imovel ? '/admin/imoveis/' + imovel.id + '?_method=PUT&_csrf=' + csrfToken() : '/admin/imoveis?_csrf=' + csrfToken() %>"
         enctype="multipart/form-data"
       >
         <% if (imovel && imovel.id) { %>
           <input type="hidden" name="_method" value="PUT">
         <% } %>
+
+        <!-- Fotos e Upload -->
+        <div class="admin-form" style="margin-bottom:1.5rem;" id="uploadFotosManual">
+          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--surface-container-high);">Fotos</h3>
+
+          <input type="hidden" name="fotos_ordem" id="fotosOrdemInput">
+
+          <div class="upload-preview" id="fotosAtuais">
+            <% if (typeof fotos !== 'undefined' && fotos && fotos.length > 0) { %>
+              <% fotos.forEach(function(foto, idx) { %>
+              <div class="upload-preview__item foto-drag-item" id="foto-<%= foto.id %>" draggable="true">
+                <img src="<%= foto.path %>" alt="">
+                <div class="foto-principal-badge<%= idx === 0 ? ' foto-principal-badge--on' : '' %>">PRINCIPAL</div>
+                <button type="button" class="upload-preview__del" onclick="deletarFoto('<%= foto.id %>')">✕</button>
+              </div>
+              <% }) %>
+            <% } %>
+
+            <!-- Botão de Upload estilo quadrado + -->
+            <div class="upload-preview__item upload-add-btn" onclick="document.getElementById('fotosInput').click()" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.02);border:2px dashed var(--outline-variant);cursor:pointer;transition:all 0.3s ease;">
+              <span style="font-size:2.5rem;color:var(--outline-variant);font-weight:300;">+</span>
+            </div>
+          </div>
+
+          <input type="file" id="fotosInput" name="fotos" multiple accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="previewFotos(this)">
+          <div class="upload-preview" id="previewNovos" style="margin-top:1rem;"></div>
+        </div>
 
         <div class="admin-form">
           <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--surface-container-high);">Informações Básicas</h3>
@@ -78,8 +106,19 @@
               <label class="input-label">Tipo *</label>
               <select name="tipo" class="input" required>
                 <option value="">Selecione</option>
-                <% ['casa','apartamento','terreno','comercial','rural','cobertura'].forEach(function(t) { %>
-                <option value="<%= t %>" <%= imovel && imovel.tipo === t ? 'selected' : '' %>><%= t.charAt(0).toUpperCase() + t.slice(1) %></option>
+                <% [
+                  ['Casa',           'Casa'],
+                  ['Sobrado',        'Sobrado'],
+                  ['Apartamento',    'Apartamento'],
+                  ['Terreno',        'Terreno'],
+                  ['Galpão/Barracão','Galpão/Barracão'],
+                  ['Sala/Salão',     'Sala/Salão'],
+                  ['Fazenda',        'Fazenda'],
+                  ['comercial',      'Comercial (legado)'],
+                  ['rural',          'Rural (legado)'],
+                  ['cobertura',      'Cobertura'],
+                ].forEach(function([val, label]) { %>
+                <option value="<%= val %>" <%= imovel && imovel.tipo === val ? 'selected' : '' %>><%= label %></option>
                 <% }) %>
               </select>
             </div>
@@ -234,33 +273,6 @@
             <% } %>
           </div>
 
-          <!-- Fotos e Upload -->
-          <h3 style="font-family:var(--font-serif);font-size:var(--title-lg);margin:1.5rem 0 1rem;padding-top:1rem;border-top:1px solid var(--surface-container-high);">Fotos</h3>
-          
-          <div class="upload-preview" id="fotosAtuais">
-            <% if (typeof fotos !== 'undefined' && fotos && fotos.length > 0) { %>
-              <% fotos.forEach(function(foto) { %>
-              <div class="upload-preview__item" id="foto-<%= foto.id %>">
-                <img src="<%= foto.path %>" alt="">
-                <% if (foto.principal) { %>
-                <div class="upload-preview__star">✓ Principal</div>
-                <% } else { %>
-                <button type="button" class="upload-preview__star" onclick="setPrincipal('<%= foto.id %>')">Principal</button>
-                <% } %>
-                <button type="button" class="upload-preview__del" onclick="deletarFoto('<%= foto.id %>')">✕</button>
-              </div>
-              <% }) %>
-            <% } %>
-
-            <!-- Botão de Upload estilo quadrado + -->
-            <div class="upload-preview__item upload-add-btn" onclick="document.getElementById('fotosInput').click()" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.02);border:2px dashed var(--outline-variant);cursor:pointer;transition:all 0.3s ease;">
-              <span style="font-size:2.5rem;color:var(--outline-variant);font-weight:300;">+</span>
-            </div>
-          </div>
-          
-          <input type="file" id="fotosInput" name="fotos" multiple accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="previewFotos(this)">
-          <div class="upload-preview" id="previewNovos" style="margin-top:1rem;"></div>
-
           <div style="display:flex;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--surface-container-high);">
             <button type="submit" class="btn btn--primary"><%= imovel ? 'Salvar Alterações' : 'Cadastrar Imóvel' %></button>
             <a href="/admin/imoveis" class="btn btn--secondary">Cancelar</a>
@@ -272,10 +284,117 @@
 </div>
 <script src="/js/admin.js"></script>
 <script>
-// ── Prepara fotos antes do submit (constrói DataTransfer uma única vez) ──
+// ── Prepara fotos antes do submit ──
 document.querySelector('form[action*="/admin/imoveis"]')?.addEventListener('submit', function() {
   prepararFotosParaSubmit();
+  serializarOrdemFotos();
 });
+
+// ── Drag & Drop — Fotos existentes (fotosAtuais) ──
+(function() {
+  const grid = document.getElementById('fotosAtuais');
+  if (!grid) return;
+  let dragged = null;
+
+  grid.addEventListener('dragstart', e => {
+    dragged = e.target.closest('.foto-drag-item');
+    if (!dragged) return;
+    setTimeout(() => dragged.classList.add('foto-dragging'), 0);
+  });
+
+  grid.addEventListener('dragend', () => {
+    if (dragged) dragged.classList.remove('foto-dragging');
+    grid.querySelectorAll('.foto-drag-item').forEach(el => el.classList.remove('foto-drag-over'));
+    dragged = null;
+    atualizarBadgePrincipal(grid, '.foto-drag-item');
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.foto-drag-item');
+    if (!target || target === dragged) return;
+    grid.querySelectorAll('.foto-drag-item').forEach(el => el.classList.remove('foto-drag-over'));
+    target.classList.add('foto-drag-over');
+    const rect = target.getBoundingClientRect();
+    if (e.clientX < rect.left + rect.width / 2) {
+      grid.insertBefore(dragged, target);
+    } else {
+      grid.insertBefore(dragged, target.nextSibling);
+    }
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const t = e.target.closest('.foto-drag-item');
+    if (t) t.classList.remove('foto-drag-over');
+  });
+})();
+
+// Atualiza qual item recebe a badge PRINCIPAL (sempre o primeiro)
+function atualizarBadgePrincipal(grid, selector) {
+  const items = grid.querySelectorAll(selector);
+  items.forEach((el, i) => {
+    const badge = el.querySelector('.foto-principal-badge');
+    if (badge) badge.classList.toggle('foto-principal-badge--on', i === 0);
+  });
+}
+
+// Serializa ordem atual dos IDs das fotos existentes no hidden input
+function serializarOrdemFotos() {
+  const grid = document.getElementById('fotosAtuais');
+  if (!grid) return;
+  const ids = Array.from(grid.querySelectorAll('.foto-drag-item'))
+    .map(el => el.id.replace('foto-', ''))
+    .filter(Boolean);
+  const inp = document.getElementById('fotosOrdemInput');
+  if (inp) inp.value = JSON.stringify(ids);
+}
+
+// ── Drag & Drop — Fotos da pasta (pastaFotosGrid) ──
+function initDragPastaGrid() {
+  const grid = document.getElementById('pastaFotosGrid');
+  if (!grid) return;
+  let dragged = null;
+
+  grid.addEventListener('dragstart', e => {
+    dragged = e.target.closest('[data-idx]');
+    if (!dragged) return;
+    setTimeout(() => dragged.classList.add('foto-dragging'), 0);
+  });
+
+  grid.addEventListener('dragend', () => {
+    if (dragged) dragged.classList.remove('foto-dragging');
+    grid.querySelectorAll('[data-idx]').forEach(el => el.classList.remove('foto-drag-over'));
+    dragged = null;
+    // Sincroniza _pastaFotos com a ordem visual atual
+    const novaOrdem = Array.from(grid.querySelectorAll('[data-idx]')).map(el => parseInt(el.dataset.idx));
+    _pastaFotos = novaOrdem.map(i => _pastaFotos[i]);
+    // Reindexa data-idx
+    Array.from(grid.querySelectorAll('[data-idx]')).forEach((el, i) => { el.dataset.idx = i; });
+    atualizarBadgePrincipal(grid, '[data-idx]');
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('[data-idx]');
+    if (!target || target === dragged) return;
+    grid.querySelectorAll('[data-idx]').forEach(el => el.classList.remove('foto-drag-over'));
+    target.classList.add('foto-drag-over');
+    const rect = target.getBoundingClientRect();
+    if (e.clientX < rect.left + rect.width / 2) {
+      grid.insertBefore(dragged, target);
+    } else {
+      grid.insertBefore(dragged, target.nextSibling);
+    }
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const t = e.target.closest('[data-idx]');
+    if (t) t.classList.remove('foto-drag-over');
+  });
+}
+// Inicia o drag da pasta sempre que renderizarFotos for chamada
+const _renderizarFotosOrig = typeof renderizarFotos === 'function' ? renderizarFotos : null;
+// (initDragPastaGrid é chamado dentro de renderizarFotos — ver patch abaixo)
 
 // ── Conversão de Área ha ↔ m² ──
 function syncArea(tipo) {
@@ -344,14 +463,23 @@ function preencherCampos(d) {
   set('descricao', d.descricao);
 }
 
-// Chama API de parse e retorna os dados extraídos
+// Chama API de parse e retorna os dados extraídos (timeout: 10s)
 async function chamarParseDoc(file) {
-  const fd = new FormData();
-  fd.append('ficha', file);
-  const res = await fetch('/admin/imoveis/parse-doc', { method: 'POST', body: fd });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Erro ao processar documento');
-  return json.data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const fd = new FormData();
+    fd.append('ficha', file);
+    const res = await fetch('/admin/imoveis/parse-doc', { method: 'POST', headers: { 'x-csrf-token': window._csrf || '' }, body: fd, signal: controller.signal });
+    clearTimeout(timer);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao processar documento');
+    return json.data;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('Tempo esgotado ao ler o documento (>20s)');
+    throw e;
+  }
 }
 
 // Mostra status
@@ -363,60 +491,45 @@ function setStatus(msg, tipo) {
   el.textContent = msg;
 }
 
-// Renderiza grid de fotos com seleção de principal
+// Renderiza grid de fotos com drag para reordenar (primeira = principal)
 function renderizarFotos(files) {
   _pastaFotos = files;
-  _principalIdx = 0;
   const wrap = document.getElementById('pastaFotosWrap');
   const grid = document.getElementById('pastaFotosGrid');
   if (!files.length) { wrap.style.display = 'none'; return; }
   document.getElementById('uploadFotosManual').style.display = 'none';
   wrap.style.display = 'block';
   grid.innerHTML = '';
-  // Usa fragment para inserir tudo de uma vez sem reflow por item
   const frag = document.createDocumentFragment();
   files.forEach((file, i) => {
-    const url = URL.createObjectURL(file); // instantâneo, sem ler o arquivo
+    const url = URL.createObjectURL(file);
     const div = document.createElement('div');
-    div.style.cssText = 'position:relative;cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;border:2.5px solid transparent;transition:border-color .2s';
+    div.className = 'foto-drag-item';
+    div.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;';
     div.dataset.idx = i;
-    if (i === 0) div.style.borderColor = 'var(--primary)';
+    div.draggable = true;
     const img = document.createElement('img');
     img.src = url;
-    img.loading = 'lazy'; // não carrega imagens fora da viewport imediatamente
+    img.loading = 'lazy';
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     const badge = document.createElement('div');
-    badge.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 4px;border-radius:4px;display:none;';
-    badge.style.background = 'var(--primary)';
-    badge.style.color = '#fff';
+    badge.className = 'foto-principal-badge' + (i === 0 ? ' foto-principal-badge--on' : '');
     badge.textContent = 'PRINCIPAL';
-    if (i === 0) badge.style.display = 'block';
     div.appendChild(img);
     div.appendChild(badge);
-    div.addEventListener('click', () => selecionarPrincipal(i));
     frag.appendChild(div);
   });
-  grid.appendChild(frag); // um único reflow
-  // Não constrói DataTransfer aqui — será feito só no submit
-}
-
-function selecionarPrincipal(idx) {
-  _principalIdx = idx;
-  document.querySelectorAll('#pastaFotosGrid > div').forEach((div, i) => {
-    const isPrincipal = i === idx;
-    div.style.borderColor = isPrincipal ? 'var(--primary)' : 'transparent';
-    div.querySelector('div').style.display = isPrincipal ? 'block' : 'none';
-  });
-  // Sem construir DataTransfer aqui — só marca visualmente
+  grid.appendChild(frag);
+  initDragPastaGrid();
 }
 
 // Constrói o FileList ordenado UMA UNICA VEZ, logo antes do submit
 // Isso evita travar o browser ao carregar a pasta ou trocar de principal
 function prepararFotosParaSubmit() {
   if (!_pastaFotos.length) return;
-  const ordered = [_pastaFotos[_principalIdx], ..._pastaFotos.filter((_, i) => i !== _principalIdx)];
+  // _pastaFotos já está na ordem correta após drag — primeira = principal
   const dt = new DataTransfer();
-  ordered.forEach(f => dt.items.add(f));
+  _pastaFotos.forEach(f => dt.items.add(f));
   document.getElementById('fotosInput').files = dt.files;
 }
 
@@ -425,14 +538,19 @@ async function processarPasta(input) {
   const files = Array.from(input.files);
   if (!files.length) return;
 
-  const docFile   = files.find(f => /\.(pdf|docx)$/i.test(f.name));
+  const docFile    = files.find(f => /\.(pdf|docx)$/i.test(f.name));
   const imageFiles = files.filter(f => /\.(jpe?g|png|webp)$/i.test(f.name));
 
-  let msgs = [];
-  setStatus('Processando pasta…', 'carregando');
+  // Carrega as fotos imediatamente — não espera o documento
+  if (imageFiles.length) {
+    renderizarFotos(imageFiles);
+  }
 
-  // Processar documento
+  let msgs = [];
+
+  // Processar documento em paralelo
   if (docFile) {
+    setStatus(`Lendo ficha (${docFile.name})…`, 'carregando');
     try {
       const dados = await chamarParseDoc(docFile);
       preencherCampos(dados);
@@ -441,18 +559,16 @@ async function processarPasta(input) {
       msgs.push(`⚠ Erro na ficha: ${e.message}`);
     }
   } else {
-    msgs.push('⚠ Nenhum PDF ou DOCX encontrado na pasta');
+    msgs.push('⚠ Nenhuma ficha (PDF/DOCX) na pasta');
   }
 
-  // Processar fotos
   if (imageFiles.length) {
-    renderizarFotos(imageFiles);
-    msgs.push(`✓ ${imageFiles.length} foto(s) carregada(s) — clique para definir a principal`);
+    msgs.push(`✓ ${imageFiles.length} foto(s) — clique para definir a principal`);
   } else {
     msgs.push('⚠ Nenhuma foto encontrada na pasta');
   }
 
-  setStatus(msgs.join(' · '), docFile ? 'ok' : 'erro');
+  setStatus(msgs.join(' · '), imageFiles.length ? 'ok' : 'erro');
   input.value = '';
 }
 

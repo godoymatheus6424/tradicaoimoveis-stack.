@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const rateLimit = require('express-rate-limit');
+
+// Rate limit específico para envio de contatos (anti-spam)
+const contatoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5,                    // máx 5 submissões por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Muitas mensagens enviadas. Aguarde 15 minutos.' },
+});
+
 
 function formatarPreco(valor) {
   if (!valor || Number(valor) === 0) return 'Consulte o Valor';
@@ -37,7 +48,23 @@ router.get('/imoveis', async (req, res) => {
   const filterParams = [];
   const conditions = ['i.ativo = true'];
 
-  if (tipo) { filterParams.push(tipo); conditions.push('i.tipo ILIKE ?'); }
+  if (tipo) {
+    // Mapeia nomes públicos para valores legados salvos no banco (admin antigo usava 'comercial'/'rural')
+    const legacyMap = {
+      'galpão/barracão': ['Galpão/Barracão', 'comercial'],
+      'sala/salão':      ['Sala/Salão', 'comercial'],
+      'fazenda':         ['Fazenda', 'rural'],
+    };
+    const matched = legacyMap[tipo.toLowerCase()];
+    if (matched) {
+      const placeholders = matched.map(() => 'LOWER(i.tipo) = ?').join(' OR ');
+      conditions.push(`(${placeholders})`);
+      matched.forEach(v => filterParams.push(v.toLowerCase()));
+    } else {
+      filterParams.push(tipo);
+      conditions.push('i.tipo ILIKE ?');
+    }
+  }
   if (finalidade) { filterParams.push(finalidade); conditions.push('i.finalidade ILIKE ?'); }
   if (preco_min && !isNaN(preco_min)) { filterParams.push(parseFloat(preco_min)); conditions.push('i.preco >= ?'); }
   if (preco_max && !isNaN(preco_max)) { filterParams.push(parseFloat(preco_max)); conditions.push('i.preco <= ?'); }
@@ -128,8 +155,14 @@ router.get('/categorias', async (req, res) => {
 });
 
 // POST /api/contatos
-router.post('/contatos', async (req, res) => {
-  const { nome, email, telefone, imovel_id, mensagem } = req.body;
+router.post('/contatos', contatoLimiter, async (req, res) => {
+  let { nome, email, telefone, imovel_id, mensagem } = req.body;
+
+  // Sanitização básica (trim + limite de tamanho)
+  nome     = typeof nome     === 'string' ? nome.trim().slice(0, 150)     : '';
+  email    = typeof email    === 'string' ? email.trim().toLowerCase().slice(0, 254) : '';
+  telefone = typeof telefone === 'string' ? telefone.trim().slice(0, 20)  : null;
+  mensagem = typeof mensagem === 'string' ? mensagem.trim().slice(0, 2000): null;
 
   if (!nome || !email) {
     return res.status(400).json({ success: false, error: 'Nome e e-mail são obrigatórios.' });
@@ -140,11 +173,16 @@ router.post('/contatos', async (req, res) => {
     return res.status(400).json({ success: false, error: 'E-mail inválido.' });
   }
 
+  // Valida imovel_id se fornecido
+  const imovelIdFinal = (imovel_id && !isNaN(imovel_id) && parseInt(imovel_id) > 0)
+    ? parseInt(imovel_id)
+    : null;
+
   try {
     await db.raw(
       `INSERT INTO contatos (imovel_id, nome, email, telefone, mensagem)
        VALUES (?, ?, ?, ?, ?)`,
-      [imovel_id || null, nome.trim(), email.trim(), telefone || null, mensagem || null]
+      [imovelIdFinal, nome, email, telefone || null, mensagem || null]
     );
     res.json({ success: true, message: 'Contato recebido com sucesso!' });
   } catch (err) {
@@ -152,5 +190,6 @@ router.post('/contatos', async (req, res) => {
     res.status(500).json({ success: false, error: 'Erro ao salvar contato.' });
   }
 });
+
 
 module.exports = router;
