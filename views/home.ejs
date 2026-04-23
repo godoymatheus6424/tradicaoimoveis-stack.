@@ -163,13 +163,6 @@
 @media (max-width: 900px) {
   .promo-banners__track { aspect-ratio: 16 / 6; }
 }
-@media (max-width: 540px) {
-  .promo-banners__track { aspect-ratio: 16 / 7; }
-  .promo-banners__inner { padding: 0 0.75rem; }
-}
-@media (max-width: 400px) {
-  .promo-banners__track { aspect-ratio: 4 / 3; }
-}
 .promo-banners__slide {
   position: absolute;
   inset: 0;
@@ -188,9 +181,33 @@
   object-position: center center;
   display: block;
 }
-@media (max-width: 540px) {
+
+/* Mobile: remove aspect-ratio fixo e mostra imagem inteira sem corte.
+   Slides viram position:relative para a altura seguir a imagem natural. */
+@media (max-width: 640px) {
+  .promo-banners__track {
+    aspect-ratio: unset;
+  }
+  .promo-banners__inner {
+    padding: 0 0.5rem;
+  }
+  .promo-banners__slide {
+    position: relative;
+    inset: unset;
+    opacity: 1;
+    display: none;
+    pointer-events: none;
+    transition: none;
+  }
+  .promo-banners__slide--active {
+    display: block;
+    pointer-events: auto;
+  }
   .promo-banners__slide img {
-    object-position: left center;
+    width: 100%;
+    height: auto;
+    object-fit: unset;
+    object-position: unset;
   }
 }
 /* Gradiente sutil no rodapé mas contido dentro do track */
